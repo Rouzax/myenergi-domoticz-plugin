@@ -114,3 +114,32 @@ def parse_feed_mapping(text: str, valid_serials: "set[str]"):
             continue
         overrides[serial] = FeedOverride(name=clean_label(name_part.strip()), role=role)
     return overrides, warnings
+
+
+JDAY_MAX_ROWS = 2000
+_ENERGY_FIELDS = {"imp", "exp", "gep", "gen", "pect1", "pect2", "pect3", "nect1", "nect2", "nect3"}
+
+
+def _jday_rows(payload: dict) -> list:
+    for key, val in payload.items():
+        if key != "asn" and isinstance(val, list):
+            return val
+    return []
+
+
+def parse_jday(payload: dict, max_rows: int = JDAY_MAX_ROWS) -> "dict[str, float]":
+    sums: "dict[str, float]" = {}
+    for row in _jday_rows(payload)[:max_rows]:
+        if not isinstance(row, dict):
+            continue
+        for field_name, value in row.items():
+            if field_name in _ENERGY_FIELDS and isinstance(value, (int, float)):
+                sums[field_name] = sums.get(field_name, 0.0) + value
+    return sums
+
+
+def jday_date(payload: dict) -> "str | None":
+    for row in _jday_rows(payload):
+        if isinstance(row, dict) and {"yr", "mon", "dom"} <= row.keys():
+            return f"{int(row['yr']):04d}-{int(row['mon']):02d}-{int(row['dom']):02d}"
+    return None
