@@ -4,6 +4,7 @@ Read-only in Plan 1. Never logs the API key or Authorization header; never enabl
 transport debuglevel; HTTPS + verified TLS only (stdlib default context).
 """
 
+import json
 import urllib.request
 
 from sanitize import validate_asn_host
@@ -18,11 +19,15 @@ class AsnValidationError(Exception):
 class MyEnergiClient:
     def __init__(self, serial, api_key, opener_factory=None, max_bytes=1_048_576):
         self._serial = serial
+        self._api_key = api_key
         self._max_bytes = max_bytes
         self._asn = None
         # Digest credentials scoped to *.myenergi.net so urllib will not emit
         # Authorization to any other host even if a redirect slips through.
-        pwmgr = urllib.request.HTTPPasswordMgr()
+        # HTTPPasswordMgrWithDefaultRealm is required so find_user_password falls
+        # back to the realm=None entry when the server presents its own realm string
+        # (e.g. "MyEnergi Telemetry") that was not registered explicitly.
+        pwmgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         for host in ("director.myenergi.net", "myenergi.net"):
             pwmgr.add_password(realm=None, uri=f"https://{host}", user=serial, passwd=api_key)
         self._pwmgr = pwmgr
@@ -49,11 +54,14 @@ class MyEnergiClient:
         if host is None:
             raise AsnValidationError(f"invalid or missing X_MYENERGI-asn: {raw!r}")
         self._asn = host
+        # Register credentials for the discovered ASN host so urllib's digest handler
+        # matches this specific subdomain. URI matching does not treat myenergi.net as
+        # covering s18.myenergi.net; each subdomain needs its own entry.
+        # validate_asn_host already confirmed host matches *.myenergi.net.
+        self._pwmgr.add_password(None, f"https://{host}", self._serial, self._api_key)
         return host
 
     def _get_json(self, url):
-        import json
-
         opener = self._opener_factory()
         req = urllib.request.Request(url, headers={"User-Agent": "Domoticz-myenergi"})
         with opener.open(req, timeout=15) as resp:
@@ -62,7 +70,7 @@ class MyEnergiClient:
 
     def fetch_status(self):
         if not self.base_url:
-            raise AsnValidationError("ASN not discovered yet")
+            raise RuntimeError("ASN not discovered yet; call discover_from_director first")
         return self._get_json(f"{self.base_url}/cgi-jstatus-*")
 
     def fetch_jday(self, device_letter, serial, iso_date):
