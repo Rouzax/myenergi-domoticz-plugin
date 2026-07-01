@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from sanitize import clean_serial
+from sanitize import clean_label, clean_serial
 
 _JOULES_PER_WH = 3600.0
 _JOULES_PER_KWH = 3_600_000.0
@@ -77,3 +77,40 @@ def parse_jstatus(payload: list) -> SystemStatus:
                 if kind == "zappi":
                     zappi_raw = raw
     return SystemStatus(devices=devices, zappi=zappi_raw)
+
+
+_VALID_ROLES = {"solar", "grid", "ev", "other"}
+_MAX_MAPPING_LINES = 64
+
+
+@dataclass
+class FeedOverride:
+    name: str
+    role: str
+
+
+def parse_feed_mapping(text: str, valid_serials: "set[str]"):
+    overrides: "dict[str, FeedOverride]" = {}
+    warnings: "list[str]" = []
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+    if len(lines) > _MAX_MAPPING_LINES:
+        warnings.append(
+            f"feed mapping exceeds line cap ({_MAX_MAPPING_LINES}); extra lines ignored"
+        )
+        lines = lines[:_MAX_MAPPING_LINES]
+    for ln in lines:
+        if "=" not in ln or ":" not in ln:
+            warnings.append(f"malformed mapping line skipped: {ln[:40]!r}")
+            continue
+        serial_part, rest = ln.split("=", 1)
+        name_part, role_part = rest.rsplit(":", 1)
+        serial = clean_serial(serial_part)
+        role = role_part.strip().lower()
+        if serial is None or serial not in valid_serials:
+            warnings.append(f"mapping for unknown serial skipped: {serial_part.strip()!r}")
+            continue
+        if role not in _VALID_ROLES:
+            warnings.append(f"mapping with unknown role skipped: {role!r}")
+            continue
+        overrides[serial] = FeedOverride(name=clean_label(name_part.strip()), role=role)
+    return overrides, warnings
