@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.claude/
+docs/superpowers/
+.superpowers/
+_temp/
+CLAUDE.md

@@ -1,0 +1,26 @@
+[project]
+name = "myenergi-domoticz-plugin"
+version = "1.0.0"
+description = "myenergi (zappi/harvi) monitoring plugin for Domoticz"
+requires-python = ">=3.9"
+
+[tool.ruff]
+# UP (pyupgrade) intentionally omitted: the 3.9 floor forbids proposing
+# X | Y unions / builtins-as-generics that break at runtime on that floor.
+target-version = "py39"
+line-length = 100
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=. --cov-report=term-missing"
+
+[tool.pyright]
+include = ["."]
+exclude = ["tests", "docs", "_temp"]
+pythonVersion = "3.9"
+typeCheckingMode = "basic"
+
+[tool.coverage.run]
+omit = ["tests/*", "cli_smoke.py"]
