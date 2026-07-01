@@ -1,5 +1,7 @@
 """Pure energy accumulation: clamps, seeding, rollover/backfill, home derivation."""
 
+from datetime import date, timedelta
+
 
 def clamp_counter(prev_wh, candidate_wh, max_step_wh):
     if candidate_wh < prev_wh:
@@ -13,3 +15,23 @@ def seed_base_wh(svalue_wh, today_sum_wh, max_plausible_wh):
     if svalue_wh > max_plausible_wh:
         return None
     return svalue_wh - today_sum_wh
+
+
+def _parse(d: str) -> date:
+    y, m, day = (int(p) for p in d.split("-"))
+    return date(y, m, day)
+
+
+def missing_dates(last_processed: str, today: str) -> "list[str]":
+    start = _parse(last_processed)
+    end = _parse(today)
+    out = []
+    cur = start + timedelta(days=1)
+    while cur < end:
+        out.append(cur.isoformat())
+        cur += timedelta(days=1)
+    return out
+
+
+def fold_days(base_wh: float, day_sums_wh: "list[float]") -> float:
+    return base_wh + sum(day_sums_wh)
