@@ -35,3 +35,7 @@ def missing_dates(last_processed: str, today: str) -> "list[str]":
 
 def fold_days(base_wh: float, day_sums_wh: "list[float]") -> float:
     return base_wh + sum(day_sums_wh)
+
+
+def home_energy_wh(gep_wh, imp_wh, exp_wh, car_ev_wh) -> float:
+    return max(0.0, gep_wh + imp_wh - exp_wh - car_ev_wh)
