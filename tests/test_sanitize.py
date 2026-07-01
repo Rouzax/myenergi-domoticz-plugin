@@ -31,3 +31,5 @@ def test_validate_asn_host_rejects_hostile():
         "",
     ]:
         assert validate_asn_host(bad) is None, bad
+    assert validate_asn_host(None) is None
+    assert validate_asn_host(42) is None

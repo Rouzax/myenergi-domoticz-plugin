@@ -2,7 +2,7 @@
 import re
 
 _LABEL_ALLOWED = re.compile(r"[^A-Za-z0-9 _.:+/-]")
-_ASN_RE = re.compile(r"^[a-z0-9.-]+\.myenergi\.net$")
+_ASN_RE = re.compile(r"^[a-z0-9.-]+\.myenergi\.net\Z")
 
 
 def clean_label(s: str, max_len: int = 64) -> str:
@@ -16,7 +16,7 @@ def clean_serial(s) -> "str | None":
     return s if s.isdigit() else None
 
 
-def validate_asn_host(host: str) -> "str | None":
+def validate_asn_host(host: object) -> "str | None":
     if not isinstance(host, str):
         return None
     host = host.strip().lower()
