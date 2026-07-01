@@ -21,6 +21,10 @@ def validate_asn_host(host: object) -> "str | None":
     if not isinstance(host, str):
         return None
     host = host.strip().lower()
+    # The pre-check below is a cheap fast-path for obviously malformed input.
+    # The real security gate is _ASN_RE: only the regex enforces the
+    # *.myenergi.net constraint. Do not remove _ASN_RE thinking the pre-check
+    # is sufficient.
     if "/" in host or "@" in host or ":" in host or " " in host:
         return None
     if not _ASN_RE.match(host):

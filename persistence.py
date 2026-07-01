@@ -8,6 +8,20 @@ STATE_VERSION = 1
 
 @dataclass
 class PluginState:
+    """Persisted plugin state serialized to/from Domoticz.Configuration().
+
+    Key domains:
+    - unit_alloc: device SERIAL string -> block base Unit (int). Tracks the
+      Domoticz unit number allocated as the start of each device's block.
+    - base_wh: Domoticz Unit number (as string) -> cumulative Wh baseline
+      (float). Stores the folded energy total so live session values are added
+      on top without double-counting days already processed.
+    - auto_names: Domoticz Unit number (as string) -> last auto-generated
+      device name. Used to detect renames and avoid overwriting user edits.
+    - last_processed_date: hub-local date YYYY-MM-DD (or None) of the last
+      day whose energy data was fully folded into base_wh.
+    """
+
     last_processed_date: "str | None" = None
     unit_alloc: "dict[str, int]" = field(default_factory=dict)
     base_wh: "dict[str, float]" = field(default_factory=dict)
