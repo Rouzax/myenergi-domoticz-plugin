@@ -19,6 +19,10 @@ addopts = "-q --cov=. --cov-report=term-missing"
 [tool.pyright]
 include = ["."]
 exclude = ["tests", "docs", "_temp"]
+# Flat plugin layout: modules import their siblings by bare name (e.g.
+# `import sanitize`). extraPaths puts the repo root on the import search path so
+# pyright resolves those imports in both source and (editor-analysed) tests.
+extraPaths = ["."]
 pythonVersion = "3.9"
 typeCheckingMode = "basic"
 
