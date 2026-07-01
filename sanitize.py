@@ -1,4 +1,5 @@
 """Security-critical input validation: label/serial sanitizing and ASN allowlist."""
+
 import re
 
 _LABEL_ALLOWED = re.compile(r"[^A-Za-z0-9 _.:+/-]")

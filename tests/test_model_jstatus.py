@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from model import parse_jstatus, ROLE_BY_CTT
+from model import ROLE_BY_CTT, parse_jstatus
 
 FIX = Path(__file__).parent / "fixtures" / "jstatus.json"
 

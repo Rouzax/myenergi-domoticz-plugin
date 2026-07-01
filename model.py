@@ -1,4 +1,5 @@
 """Pure parsing, discovery, and conversion for myenergi cloud data."""
+
 from dataclasses import dataclass, field
 
 from sanitize import clean_serial

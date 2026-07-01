@@ -1,4 +1,4 @@
-from model import joules_to_kwh, joules_to_wh, deci_volts_to_v, centi_hz_to_hz
+from model import centi_hz_to_hz, deci_volts_to_v, joules_to_kwh, joules_to_wh
 
 
 def test_joule_conversions():
