@@ -1,0 +1,14 @@
+[
+  {"eddi": []},
+  {"harvi": [
+    {"deviceClass":"HARVI","sno":10000001,"ectp1":106,"ectp2":127,"ectp3":92,
+     "ectt1":"Generation","ectt2":"Generation","ectt3":"Generation"}
+  ]},
+  {"zappi": [
+    {"deviceClass":"ZAPPI","sno":20000002,"gen":1215,"grd":734,"div":0,"che":2.34,
+     "vol":2343,"frq":5001,"sta":4,"pst":"A","zmo":1,
+     "ectp1":0,"ectp2":0,"ectp3":0,"ectt1":"Internal Load","ectt2":"Internal Load","ectt3":"Internal Load",
+     "ectp4":-50,"ectp5":225,"ectp6":568,"ectt4":"Grid","ectt5":"Grid","ectt6":"Grid"}
+  ]},
+  {"asn":"s18.myenergi.net"}
+]
