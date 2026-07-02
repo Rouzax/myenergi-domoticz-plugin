@@ -80,7 +80,6 @@ from persistence import PluginState
 from planner import AGG_UNITS, advance_baselines, assign_harvi_units, plan, plan_harvi_updates
 
 _MAX_BACKFILL_DAYS = 14
-_CONFIRM_TIMEOUT = 5
 _DISCOVERY_BACKOFF_INITIAL = 20.0
 _DISCOVERY_BACKOFF_CAP = 900.0
 
@@ -354,12 +353,6 @@ def _existing_units(devices, did):
     return frozenset(dev.Units.keys()) if dev is not None else frozenset()
 
 
-def _reconcile_from_status(devices, did, status):
-    existing = _existing_units(devices, did)
-    updates = control.plan_control_updates(status, _state.config, existing)
-    _state.auto_names = domoticz_api.apply_updates(devices, did, updates, _state.auto_names)
-
-
 def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
     st = _state
     devices = globals().get("Devices")
@@ -369,6 +362,11 @@ def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
         if not st.config.allow_control:
             return
         did = domoticz_api.device_id(_hardware_id())
+        if Unit in (control.UNIT_BOOST_KWH, control.UNIT_BOOST_TIME) and Command == "Set Level":
+            upd = control.persist_input_setpoint(Unit, Level, st.config.language)
+            if upd is not None:
+                st.auto_names = domoticz_api.apply_updates(devices, did, [upd], st.auto_names)
+            return
         siblings = _read_siblings(devices, did, [control.UNIT_BOOST_KWH, control.UNIT_BOOST_TIME])
         intent = control.decide_write(Unit, Command, Level, siblings)
         if intent is None:
@@ -393,13 +391,6 @@ def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
         if opt is not None:
             st.auto_names = domoticz_api.apply_updates(devices, did, [opt], st.auto_names)
         st.reconcile_suppress[Unit] = now + 2 * st.config.live_interval
-        try:
-            status = parse_jstatus(st.client.fetch_status(timeout=_CONFIRM_TIMEOUT))
-            _reconcile_from_status(devices, did, status)
-        except Exception as exc:  # noqa: BLE001 - a confirm failure never rolls back the write
-            domoticz_api.log_redacted(
-                Domoticz.Status, f"myenergi confirm skipped: {exc}", st.config.api_key
-            )
     except Exception as exc:  # noqa: BLE001 - onCommand must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi onCommand error: {exc}", st.config.api_key

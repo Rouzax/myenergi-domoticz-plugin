@@ -132,7 +132,7 @@ def allow_write_now(now, last_any_ts, min_gap) -> bool:
     return (now - last_any_ts) >= min_gap
 
 
-def _selector_options(kind, language, style="1"):
+def _selector_options(kind, language, style="0"):
     return {
         "LevelActions": "|" * (len(control_level_names(kind, language).split("|")) - 1),
         "LevelNames": control_level_names(kind, language),
@@ -164,6 +164,7 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
             name=control_device_name("mode", language),
             nvalue=lvl,
             svalue=str(lvl),
+            image=30,
             switchtype=18,
         )
     if unit == UNIT_BOOST:
@@ -179,6 +180,7 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
             name=control_device_name("boost", language),
             nvalue=lvl,
             svalue=str(lvl),
+            image=30,
             switchtype=18,
         )
     if unit == UNIT_MIN_GREEN:
@@ -192,6 +194,32 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
             name=control_device_name("min_green", language),
             nvalue=0,
             svalue=str(pct),
+        )
+    return None
+
+
+def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
+    if not _finite(level):
+        return None
+    if unit == UNIT_BOOST_KWH:
+        kwh = max(0, min(int(round(float(level))), MAX_KWH))
+        return DeviceUpdate(
+            unit=UNIT_BOOST_KWH,
+            type_name="Setpoint",
+            options=_setpoint_options("kWh", 0, MAX_KWH, 1),
+            name=control_device_name("boost_kwh", language),
+            nvalue=0,
+            svalue=str(kwh),
+        )
+    if unit == UNIT_BOOST_TIME:
+        hhmm = max(0, min(int(round(float(level))), 2359))
+        return DeviceUpdate(
+            unit=UNIT_BOOST_TIME,
+            type_name="Setpoint",
+            options=_setpoint_options("HHMM", 0, 2359, 15),
+            name=control_device_name("boost_time", language),
+            nvalue=0,
+            svalue=str(hhmm),
         )
     return None
 
@@ -218,6 +246,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                     name=control_device_name("mode", lang),
                     nvalue=ZMO_TO_LEVEL[zmo],
                     svalue=str(ZMO_TO_LEVEL[zmo]),
+                    image=30,
                     switchtype=18,
                 )
             )
@@ -230,6 +259,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                 name=control_device_name("boost", lang),
                 nvalue=rest,
                 svalue=str(rest),
+                image=30,
                 switchtype=18,
             )
         )

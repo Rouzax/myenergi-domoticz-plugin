@@ -1,4 +1,4 @@
-from control import UNIT_MIN_GREEN, UNIT_MODE, optimistic_update
+from control import UNIT_BOOST, UNIT_MIN_GREEN, UNIT_MODE, optimistic_update
 
 
 def test_mode_level_optimistic_update():
@@ -7,6 +7,13 @@ def test_mode_level_optimistic_update():
     assert update.nvalue == 20
     assert update.svalue == "20"
     assert update.type_name == "Selector Switch"
+    assert update.image == 30
+
+
+def test_boost_level_optimistic_update_carries_car_charger_icon():
+    update = optimistic_update(UNIT_BOOST, "Set Level", 10, "English")
+    assert update.unit == 13
+    assert update.image == 30
 
 
 def test_min_green_optimistic_update():

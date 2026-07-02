@@ -40,6 +40,15 @@ def test_mode_reconciled_when_control_on():
     assert updates[UNIT_MODE].nvalue == 20  # ZMO_TO_LEVEL[3]
 
 
+def test_mode_and_boost_use_button_set_style_and_car_charger_icon():
+    status = _status(zappi={"zmo": 1, "bsm": 0})
+    updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
+    assert updates[UNIT_MODE].options["SelectorStyle"] == "0"
+    assert updates[UNIT_MODE].image == 30
+    assert updates[UNIT_BOOST].options["SelectorStyle"] == "0"
+    assert updates[UNIT_BOOST].image == 30
+
+
 def test_mode_absent_field_not_reconciled():
     status = _status(zappi={})  # no zmo
     updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
