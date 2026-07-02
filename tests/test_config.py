@@ -38,3 +38,13 @@ def test_parse_rejects_garbage_numbers():
 def test_parse_harvi_names_slots():
     cfg = parse_config({"Username": "1", "Harvi1Serial": "21460322", "Harvi1Name": "SolarEdge"})
     assert cfg.harvi_names == {"21460322": "SolarEdge"}
+
+
+def test_api_key_whitespace_is_trimmed():
+    cfg = parse_config({"Username": "10000001", "ApiKey": "  abc123  \n"})
+    assert cfg.api_key == "abc123"
+
+
+def test_api_key_internal_chars_preserved():
+    cfg = parse_config({"Username": "10000001", "ApiKey": "ab c1-2_3"})
+    assert cfg.api_key == "ab c1-2_3"

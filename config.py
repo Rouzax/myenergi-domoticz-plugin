@@ -37,7 +37,7 @@ def parse_config(params: dict) -> Config:
     language = str(params.get("Language", "English"))
     if language not in LANGUAGES:
         language = "English"
-    api_key = str(params.get("ApiKey") or params.get("Password") or "")
+    api_key = str(params.get("ApiKey") or params.get("Password") or "").strip()
     return Config(
         hub_serial=str(params.get("Username", "")).strip(),
         api_key=api_key,
