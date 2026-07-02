@@ -17,17 +17,17 @@ UNIT_BOOST_TIME = 15
 UNIT_MIN_GREEN = 16
 UNIT_LOCK_STATE = 18
 
-MODE_LEVELS = {0: 1, 10: 2, 20: 3, 30: 4}
-ZMO_TO_LEVEL = {1: 0, 2: 10, 3: 20, 4: 30}
+MODE_LEVELS = {10: 1, 20: 2, 30: 3, 40: 4}
+ZMO_TO_LEVEL = {1: 10, 2: 20, 3: 30, 4: 40}
 
 MAX_KWH = 100
 MAX_GREEN = 100
 
 LCK_BITS = (
     (0, "Locked Now"),
-    (1, "Lock when plugged in"),
-    (2, "Lock when unplugged"),
-    (3, "Charge when locked"),
+    (1, "EV Plugged"),
+    (2, "EV Unplugged"),
+    (3, "Charge"),
     (4, "Charge session allowed"),
 )
 
@@ -98,14 +98,14 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
         if command != "Set Level" or not _finite(level):
             return None
         lvl = int(level)
-        if lvl == 0:
+        if lvl == 10:
             return WriteIntent("boost_cancel")
         kwh = validate_kwh(_sibling_float(siblings, UNIT_BOOST_KWH))
         if kwh is None:
             return None
-        if lvl == 10:
-            return WriteIntent("boost_manual", kwh=kwh)
         if lvl == 20:
+            return WriteIntent("boost_manual", kwh=kwh)
+        if lvl == 30:
             hhmm = validate_hhmm(_sibling_float(siblings, UNIT_BOOST_TIME))
             return WriteIntent("boost_smart", kwh=kwh, hhmm=hhmm) if hhmm is not None else None
         return None
@@ -133,10 +133,11 @@ def allow_write_now(now, last_any_ts, min_gap) -> bool:
 
 
 def _selector_options(kind, language, style="0"):
+    level_names = "Off|" + control_level_names(kind, language)
     return {
-        "LevelActions": "|" * (len(control_level_names(kind, language).split("|")) - 1),
-        "LevelNames": control_level_names(kind, language),
-        "LevelOffHidden": "false",
+        "LevelActions": "|" * (len(level_names.split("|")) - 1),
+        "LevelNames": level_names,
+        "LevelOffHidden": "true",
         "SelectorStyle": style,
     }
 
@@ -171,7 +172,7 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
         if command != "Set Level" or not _finite(level):
             return None
         lvl = int(level)
-        if lvl not in (0, 10, 20):
+        if lvl not in (10, 20, 30):
             return None
         return DeviceUpdate(
             unit=UNIT_BOOST,
@@ -230,8 +231,8 @@ def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
 def boost_resting_level(zappi) -> int:
     bsm = zappi.get("bsm") if isinstance(zappi, dict) else None
     if not isinstance(bsm, int) or bsm == 0:
-        return 0
-    return 20 if bsm == 2 else 10
+        return 10
+    return 30 if bsm == 2 else 20
 
 
 def plan_control_updates(status, config, existing_units=frozenset()) -> "list[DeviceUpdate]":

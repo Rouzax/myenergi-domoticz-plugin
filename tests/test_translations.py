@@ -39,7 +39,11 @@ def test_mode_level_names_english():
 
 
 def test_boost_level_names_english():
-    assert control_level_names("boost", "English") == "Stop|Manual|Smart"
+    assert control_level_names("boost", "English") == "Stop|Manual Boost|Smart Boost"
+
+
+def test_boost_level_names_nederlands():
+    assert control_level_names("boost", "Nederlands") == "Stop|Handmatige Boost|Slimme Boost"
 
 
 def test_control_device_name_localised():

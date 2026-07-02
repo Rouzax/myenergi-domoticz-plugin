@@ -213,18 +213,18 @@ def test_reconcile_suppression_skips_units_with_future_deadline():
     _setup(counter_every=1, allow_control=True)
     client = _ModeClient()
     plugin._state.client = client
-    plugin.onHeartbeat()  # beat 1: creates unit 12, zmo=1 -> level 0
+    plugin.onHeartbeat()  # beat 1: creates unit 12, zmo=1 -> level 10
     did = device_id(0)
-    assert Domoticz.Devices[did].Units[12].nValue == 0
+    assert Domoticz.Devices[did].Units[12].nValue == 10
 
-    client.zmo = 2  # hub reports Eco (level 10) while we suppress reconcile
+    client.zmo = 2  # hub reports Eco (level 20) while we suppress reconcile
     plugin._state.reconcile_suppress[control.UNIT_MODE] = time.monotonic() + 1000
     plugin.onHeartbeat()
-    assert Domoticz.Devices[did].Units[12].nValue == 0  # suppressed -> unchanged
+    assert Domoticz.Devices[did].Units[12].nValue == 10  # suppressed -> unchanged
 
     plugin._state.reconcile_suppress[control.UNIT_MODE] = time.monotonic() - 1
     plugin.onHeartbeat()
-    assert Domoticz.Devices[did].Units[12].nValue == 10  # deadline passed -> reconciled
+    assert Domoticz.Devices[did].Units[12].nValue == 20  # deadline passed -> reconciled
 
 
 class _DiscoveryClient(_FakeClient):

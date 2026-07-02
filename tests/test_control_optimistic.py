@@ -8,12 +8,19 @@ def test_mode_level_optimistic_update():
     assert update.svalue == "20"
     assert update.type_name == "Selector Switch"
     assert update.image == 30
+    assert update.options["LevelOffHidden"] == "true"
+    assert update.options["LevelNames"] == "Off|Fast|Eco|Eco+|Stopped"
+    assert update.options["LevelActions"] == "||||"
 
 
 def test_boost_level_optimistic_update_carries_car_charger_icon():
-    update = optimistic_update(UNIT_BOOST, "Set Level", 10, "English")
+    update = optimistic_update(UNIT_BOOST, "Set Level", 20, "English")
     assert update.unit == 13
     assert update.image == 30
+
+
+def test_boost_bad_level_returns_none():
+    assert optimistic_update(UNIT_BOOST, "Set Level", 0, "English") is None
 
 
 def test_min_green_optimistic_update():

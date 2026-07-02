@@ -11,34 +11,40 @@ from control import (
 
 
 def test_mode_selector_maps_level_to_zmo():
-    intent = decide_write(UNIT_MODE, "Set Level", 0, {})
+    intent = decide_write(UNIT_MODE, "Set Level", 10, {})
     assert intent.kind == "mode"
     assert intent.mode == 1  # Fast
-    assert decide_write(UNIT_MODE, "Set Level", 30, {}).mode == 4  # Stopped
+    assert decide_write(UNIT_MODE, "Set Level", 40, {}).mode == 4  # Stopped
 
 
 def test_mode_unknown_level_is_none():
     assert decide_write(UNIT_MODE, "Set Level", 99, {}) is None
 
 
+def test_mode_off_command_is_none():
+    # Domoticz sends command "Off" for the hidden level-0 slot; the real
+    # options (level 10+) always send "Set Level", so "Off" never maps.
+    assert decide_write(UNIT_MODE, "Off", 0, {}) is None
+
+
 def test_boost_stop_cancels():
-    intent = decide_write(UNIT_BOOST, "Set Level", 0, {})
+    intent = decide_write(UNIT_BOOST, "Set Level", 10, {})
     assert intent.kind == "boost_cancel"
 
 
 def test_boost_manual_reads_kwh_sibling():
-    intent = decide_write(UNIT_BOOST, "Set Level", 10, {UNIT_BOOST_KWH: "5"})
+    intent = decide_write(UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_KWH: "5"})
     assert intent.kind == "boost_manual"
     assert intent.kwh == 5
 
 
 def test_boost_manual_rejects_zero_kwh():
-    assert decide_write(UNIT_BOOST, "Set Level", 10, {UNIT_BOOST_KWH: "0"}) is None
+    assert decide_write(UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_KWH: "0"}) is None
 
 
 def test_boost_smart_reads_kwh_and_time():
     intent = decide_write(
-        UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_KWH: "5", UNIT_BOOST_TIME: "1400"}
+        UNIT_BOOST, "Set Level", 30, {UNIT_BOOST_KWH: "5", UNIT_BOOST_TIME: "1400"}
     )
     assert intent.kind == "boost_smart"
     assert intent.kwh == 5
@@ -47,7 +53,7 @@ def test_boost_smart_reads_kwh_and_time():
 
 def test_boost_smart_rejects_bad_time():
     assert (
-        decide_write(UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_KWH: "5", UNIT_BOOST_TIME: "1275"})
+        decide_write(UNIT_BOOST, "Set Level", 30, {UNIT_BOOST_KWH: "5", UNIT_BOOST_TIME: "1275"})
         is None
     )
 

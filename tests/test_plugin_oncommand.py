@@ -25,20 +25,20 @@ def _setup(allow_control=True):
 
 def test_oncommand_mode_write(monkeypatch):
     st = _setup()
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
     assert st.client.calls == [("mode", "10000001", 1)]
 
 
 def test_oncommand_blocked_when_control_off():
     st = _setup(allow_control=False)
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
     assert st.client.calls == []
 
 
 def test_oncommand_fail_closed_without_serial():
     st = _setup()
     st.zappi_serial = None
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
     assert st.client.calls == []
 
 
@@ -63,7 +63,7 @@ def test_oncommand_write_rejection_redacts_api_key_from_log():
     st.client = _RejectingClient()
     st.zappi_serial = "10000001"
 
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
 
     assert st.client.calls == [("mode", "10000001", 1)]
     assert not any(sentinel in line for line in Domoticz._log)
@@ -77,8 +77,8 @@ def _mode_unit(st):
 
 def test_oncommand_optimistic_apply_on_success():
     st = _setup()
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 30, "")  # Stopped
-    assert _mode_unit(st).nValue == 30
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 40, "")  # Stopped
+    assert _mode_unit(st).nValue == 40
 
 
 def test_oncommand_optimistic_value_persists_no_confirm_fetch():
@@ -106,9 +106,9 @@ def test_oncommand_optimistic_value_persists_no_confirm_fetch():
     st.client = _StaleStatusClient()
     st.zappi_serial = "10000001"
 
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 30, "")  # Stopped
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 40, "")  # Stopped
 
-    assert _mode_unit(st).nValue == 30
+    assert _mode_unit(st).nValue == 40
     assert st.client.fetch_status_called is False
 
 
@@ -145,7 +145,7 @@ def test_oncommand_write_never_leaks_authorization_or_digest_artifacts():
     # its handshake artifacts, on either a rejected or a successful write.
     # Complements the api_key sentinel test above.
     st = _setup()
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
     assert st.client.calls == [("mode", "10000001", 1)]
     for line in Domoticz._log:
         for artifact in _DIGEST_ARTIFACTS:
@@ -168,7 +168,7 @@ def test_oncommand_rejected_write_never_leaks_authorization_or_digest_artifacts(
     st.client = _RejectingClient()
     st.zappi_serial = "10000001"
 
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
 
     assert st.client.calls == [("mode", "10000001", 1)]
     for line in Domoticz._log:
@@ -181,10 +181,10 @@ def test_oncommand_mode_write_logs_verbose_debug_without_leaking_api_key():
     st = _setup()
     st.config = Config("10000001", sentinel, "English", 20, 6, 25.0, 0, allow_control=True)
 
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
 
     assert st.client.calls == [("mode", "10000001", 1)]
-    assert any("onCommand unit=12 command=Set Level level=0" in line for line in Domoticz._log)
+    assert any("onCommand unit=12 command=Set Level level=10" in line for line in Domoticz._log)
     assert any("control write ok kind=mode" in line for line in Domoticz._log)
     assert not any(sentinel in line for line in Domoticz._log)
 
@@ -201,7 +201,7 @@ def test_oncommand_storm_coalescing_marks_timestamp_even_on_dispatch_failure():
     st.client = _RaisingClient()
     st.last_any_write_ts = 0.0
 
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 10, "")
 
     assert st.last_any_write_ts > 0.0
     assert any("myenergi onCommand error" in line for line in Domoticz._log)

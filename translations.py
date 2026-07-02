@@ -24,8 +24,8 @@ _CONTROL_LEVELS = {
         "Nederlands": "Snel|Eco|Eco+|Gestopt",
     },
     "boost": {
-        "English": "Stop|Manual|Smart",
-        "Nederlands": "Stop|Handmatig|Slim",
+        "English": "Stop|Manual Boost|Smart Boost",
+        "Nederlands": "Stop|Handmatige Boost|Slimme Boost",
     },
 }
 _CONTROL_NAMES = {

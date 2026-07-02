@@ -37,7 +37,7 @@ def test_no_updates_when_gates_off():
 def test_mode_reconciled_when_control_on():
     status = _status(zappi={"zmo": 3})  # Eco+
     updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
-    assert updates[UNIT_MODE].nvalue == 20  # ZMO_TO_LEVEL[3]
+    assert updates[UNIT_MODE].nvalue == 30  # ZMO_TO_LEVEL[3]
 
 
 def test_mode_and_boost_use_button_set_style_and_car_charger_icon():
@@ -47,6 +47,15 @@ def test_mode_and_boost_use_button_set_style_and_car_charger_icon():
     assert updates[UNIT_MODE].image == 30
     assert updates[UNIT_BOOST].options["SelectorStyle"] == "0"
     assert updates[UNIT_BOOST].image == 30
+
+
+def test_mode_and_boost_hide_level_zero_slot():
+    status = _status(zappi={"zmo": 1, "bsm": 0})
+    updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
+    assert updates[UNIT_MODE].options["LevelOffHidden"] == "true"
+    assert updates[UNIT_MODE].options["LevelNames"] == "Off|Fast|Eco|Eco+|Stopped"
+    assert updates[UNIT_BOOST].options["LevelOffHidden"] == "true"
+    assert updates[UNIT_BOOST].options["LevelNames"] == "Off|Stop|Manual Boost|Smart Boost"
 
 
 def test_mode_absent_field_not_reconciled():
@@ -75,11 +84,15 @@ def test_lock_state_emitted_when_control_on():
 
 
 def test_boost_resting_level_stop_when_inactive():
-    assert boost_resting_level({"bsm": 0}) == 0
+    assert boost_resting_level({"bsm": 0}) == 10
 
 
 def test_boost_resting_level_manual_when_active():
-    assert boost_resting_level({"bsm": 1}) == 10
+    assert boost_resting_level({"bsm": 1}) == 20
+
+
+def test_boost_resting_level_smart_when_active():
+    assert boost_resting_level({"bsm": 2}) == 30
 
 
 def test_control_on_emits_boost_and_green_widgets():

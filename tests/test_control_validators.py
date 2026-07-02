@@ -40,9 +40,20 @@ def test_decode_lck_reports_bits():
     assert "Locked Now" in text
 
 
+def test_decode_lck_reports_all_flag_names():
+    assert "EV Plugged" in decode_lck(1 << 1)
+    assert "EV Unplugged" in decode_lck(1 << 2)
+    assert "Charge" in decode_lck(1 << 3)
+    assert "Charge session allowed" in decode_lck(1 << 4)
+
+
+def test_decode_lck_no_flags():
+    assert decode_lck(0) == "0 (none)"
+
+
 def test_zmo_level_maps_are_inverse():
-    assert ZMO_TO_LEVEL[1] == 0
-    assert ZMO_TO_LEVEL[4] == 30
+    assert ZMO_TO_LEVEL[1] == 10
+    assert ZMO_TO_LEVEL[4] == 40
 
 
 def test_validators_reject_oversized_int():
