@@ -1,6 +1,6 @@
 import Domoticz
 
-from domoticz_api import apply_updates, device_id
+from domoticz_api import apply_updates, deactivate_units, device_id
 from planner import DeviceUpdate
 
 
@@ -61,3 +61,29 @@ def test_creates_device_with_switchtype():
     up = DeviceUpdate(1, "kWh", {"EnergyMeterMode": "0"}, "Solar Total", 0, "1215;5000.0000", 0, 4)
     apply_updates(Domoticz.Devices, did, [up], {})
     assert Domoticz.Devices[did].Units[1].SwitchType == 4
+
+
+def test_deactivate_sets_used_zero():
+    did = device_id(1)
+    apply_updates(
+        Domoticz.Devices,
+        did,
+        [
+            DeviceUpdate(
+                unit=4,
+                type_name="Text",
+                options={},
+                name="Zappi Mode",
+                nvalue=0,
+                svalue="Eco",
+            )
+        ],
+        {},
+    )
+    deactivate_units(Domoticz.Devices, did, [4])
+    assert Domoticz.Devices[did].Units[4].Used == 0
+
+
+def test_deactivate_missing_unit_is_noop():
+    did = device_id(1)
+    deactivate_units(Domoticz.Devices, did, [99])  # must not raise

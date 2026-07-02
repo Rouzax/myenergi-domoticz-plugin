@@ -55,6 +55,14 @@ def apply_updates(devices, dev_id, updates, auto_names) -> dict:
     return names
 
 
+def deactivate_units(devices, dev_id, units) -> None:
+    for unit in units:
+        existing = _existing_unit(devices, dev_id, unit)
+        if existing is not None:
+            existing.Used = 0
+            existing.Update(UpdateProperties=True)
+
+
 def read_prev_counters(devices, dev_id, units) -> dict:
     out = {}
     for unit in units:
