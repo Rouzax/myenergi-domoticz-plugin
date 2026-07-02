@@ -1,24 +1,36 @@
 # pyright: reportMissingImports=false, reportUndefinedVariable=false, reportAttributeAccessIssue=false
 """\
-<plugin key="myenergi" name="myenergi (zappi/harvi) Monitor" author="Rouzax" version="1.0.0" externallink="https://github.com/Rouzax">
+<plugin key="myenergi" name="myenergi Monitor" author="Rouzax" version="1.0.0" externallink="https://github.com/Rouzax">
     <description>
         <h2>myenergi cloud monitor (read-only)</h2>
-        <p>Reads your myenergi system via the cloud API and creates Solar Total, Home Consumption, EV Charging (real kWh counters), plus mode/status/voltage/frequency devices.</p>
+        <p>Reads your myenergi system (zappi, harvi) via the cloud API and creates Solar Total, Home Consumption, EV Charging (real kWh counters), plus mode/status/voltage/frequency devices.</p>
         <p><b>Your API key grants charger control and is stored in cleartext in the Domoticz database. Treat DB backups as secrets and rotate the key if exposed.</b></p>
     </description>
     <params>
-        <param field="Username" label="Hub Serial Number" width="150px" required="true"/>
-        <param field="ApiKey" label="API Key" width="200px" required="true" password="true"/>
+        <param field="Username" label="Hub Serial Number" width="150px" required="true">
+            <description>The serial number of your myenergi hub (shown in the myenergi app and on the hub label). Used as the API username.</description>
+        </param>
+        <param field="ApiKey" label="API Key" width="200px" required="true" password="true">
+            <description>API key generated in the myenergi app (Account, Advanced, API Key). Grants full control of your charger and is stored in cleartext in the Domoticz database, so treat DB backups as secrets and rotate the key if it is ever exposed.</description>
+        </param>
         <param field="Language" label="Language" width="150px">
+            <description>Language for device names and status text (English or Nederlands). The settings page itself is always English.</description>
             <options>
                 <option label="English" value="English" default="true"/>
                 <option label="Nederlands" value="Nederlands"/>
             </options>
         </param>
-        <param field="LivePoll" type="number" label="Live Poll Interval (s)" min="15" max="300" default="20" width="100px"/>
-        <param field="CounterPoll" type="number" label="Counter Refresh (s)" min="30" max="900" default="120" width="100px"/>
-        <param field="MaxSystemKW" type="number" label="Max System Power (kW)" min="1" max="100" default="25" width="100px"/>
+        <param field="LivePoll" type="number" label="Live Poll Interval (s)" min="15" max="300" default="20" width="100px">
+            <description>How often to poll live power and status, in seconds (15 to 300). myenergi data updates about once per second, so 15 to 30s is plenty and gentle on their cloud.</description>
+        </param>
+        <param field="CounterPoll" type="number" label="Counter Refresh (s)" min="30" max="900" default="120" width="100px">
+            <description>How often to refresh the cumulative kWh counters from myenergi's energy history, in seconds (30 to 900). Rounded to a whole multiple of the live poll interval.</description>
+        </param>
+        <param field="MaxSystemKW" type="number" label="Max System Power (kW)" min="1" max="100" default="25" width="100px">
+            <description>Total system power ceiling in kW, used as a sanity clamp on counter jumps. Set it roughly to your combined solar plus grid plus charger capacity.</description>
+        </param>
         <param field="DebugLevel" label="Debug Level" width="150px">
+            <description>Logging verbosity. None for normal use; Basic or Verbose for troubleshooting. The API key is never written to the log at any level.</description>
             <options>
                 <option label="None" value="0" default="true"/>
                 <option label="Basic" value="1"/>

@@ -1,4 +1,4 @@
-# myenergi (zappi/harvi) Monitor for Domoticz
+# myenergi Monitor for Domoticz
 
 A read-only Domoticz plugin that polls the myenergi cloud API and surfaces solar generation,
 EV charging, and derived home consumption as real kWh counters that match the myenergi app.
@@ -55,7 +55,7 @@ myenergi's per-minute energy history and persists across Domoticz restarts.
 
 2. Restart Domoticz.
 
-3. Go to **Setup -> Hardware -> Add**, choose **myenergi (zappi/harvi) Monitor**, fill in
+3. Go to **Setup -> Hardware -> Add**, choose **myenergi Monitor**, fill in
    the settings (see below), and click **Add**.
 
 4. On first run the plugin creates all 9 devices. For them to appear in the Devices list,
