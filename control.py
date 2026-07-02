@@ -98,14 +98,15 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
         if command != "Set Level" or not _finite(level):
             return None
         lvl = int(level)
-        if lvl == 10:
-            return WriteIntent("boost_cancel")
-        kwh = validate_kwh(_sibling_float(siblings, UNIT_BOOST_KWH))
-        if kwh is None:
-            return None
-        if lvl == 20:
-            return WriteIntent("boost_manual", kwh=kwh)
         if lvl == 30:
+            return WriteIntent("boost_cancel")
+        if lvl == 10:
+            kwh = validate_kwh(_sibling_float(siblings, UNIT_BOOST_KWH))
+            return WriteIntent("boost_manual", kwh=kwh) if kwh is not None else None
+        if lvl == 20:
+            kwh = validate_kwh(_sibling_float(siblings, UNIT_BOOST_KWH))
+            if kwh is None:
+                return None
             hhmm = validate_hhmm(_sibling_float(siblings, UNIT_BOOST_TIME))
             return WriteIntent("boost_smart", kwh=kwh, hhmm=hhmm) if hhmm is not None else None
         return None
@@ -130,6 +131,10 @@ def should_debounce(unit, now, last_write, min_gap) -> bool:
 
 def allow_write_now(now, last_any_ts, min_gap) -> bool:
     return (now - last_any_ts) >= min_gap
+
+
+def is_noop_update(current_nvalue, current_svalue, update) -> bool:
+    return current_nvalue == update.nvalue and str(current_svalue) == str(update.svalue)
 
 
 def _selector_options(kind, language, style="0"):
@@ -229,10 +234,14 @@ def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
 
 
 def boost_resting_level(zappi) -> int:
+    # bsm==0 (idle) is confirmed against live jstatus. The active-boost mapping
+    # (bsm==1 manual, bsm==2 smart) is BEST-EFFORT / UNVERIFIED: the car was
+    # unplugged during live testing so an active boost's bsm/bss/bst could not be
+    # observed. Finalize this against a plugged-in, actively-boosting zappi.
     bsm = zappi.get("bsm") if isinstance(zappi, dict) else None
     if not isinstance(bsm, int) or bsm == 0:
-        return 10
-    return 30 if bsm == 2 else 20
+        return 0
+    return 20 if bsm == 2 else 10
 
 
 def plan_control_updates(status, config, existing_units=frozenset()) -> "list[DeviceUpdate]":

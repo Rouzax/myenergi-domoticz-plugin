@@ -227,6 +227,78 @@ def test_reconcile_suppression_skips_units_with_future_deadline():
     assert Domoticz.Devices[did].Units[12].nValue == 20  # deadline passed -> reconciled
 
 
+class _ModeClient(_FakeClient):
+    def __init__(self):
+        super().__init__()
+        self.zmo = 1
+
+    def fetch_status(self):
+        payload = super().fetch_status()
+        payload[0]["zappi"][0]["zmo"] = self.zmo
+        return payload
+
+
+def test_control_unchanged_value_not_reapplied_on_live_beat(monkeypatch):
+    # FB9: control reconcile now runs every heartbeat, but a no-op (unchanged)
+    # control value must not be re-applied on a live beat.
+    _setup(counter_every=2, allow_control=True)
+    client = _ModeClient()
+    plugin._state.client = client
+    calls = []
+    orig_apply = plugin.domoticz_api.apply_updates
+
+    def _spy(devices, dev_id, updates, auto_names):
+        calls.append(list(updates))
+        return orig_apply(devices, dev_id, updates, auto_names)
+
+    monkeypatch.setattr(plugin.domoticz_api, "apply_updates", _spy)
+
+    plugin.onHeartbeat()  # beat 1 (refresh): creates unit 12, zmo=1 -> level 10
+    did = device_id(0)
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 10
+
+    plugin._state.beat = 2  # next beat -> 3, live (not first, 3 % 2 != 0)
+    plugin.onHeartbeat()  # zmo unchanged -> no-op, dropped before apply_updates
+    live_updates = calls[-1]
+    assert not any(u.unit == control.UNIT_MODE for u in live_updates)
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 10
+
+
+def test_control_changed_value_updates_on_live_beat():
+    # FB9: an external/app change (here zmo) must reflect on the very next live
+    # beat, not wait for the ~120s counter refresh.
+    _setup(counter_every=2, allow_control=True)
+    client = _ModeClient()
+    plugin._state.client = client
+
+    plugin.onHeartbeat()  # beat 1 (refresh): zmo=1 -> level 10
+    did = device_id(0)
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 10
+
+    client.zmo = 3  # Eco+ -> level 30
+    plugin._state.beat = 2  # next beat -> 3, live
+    plugin.onHeartbeat()
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 30
+
+
+def test_control_suppressed_unit_skipped_on_live_beat():
+    # FB9: reconcile-suppression (set right after a command) must still be
+    # honored on the live cadence, not just on a refresh beat.
+    _setup(counter_every=2, allow_control=True)
+    client = _ModeClient()
+    plugin._state.client = client
+
+    plugin.onHeartbeat()  # beat 1 (refresh): zmo=1 -> level 10
+    did = device_id(0)
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 10
+
+    client.zmo = 2  # Eco -> level 20, would otherwise reconcile
+    plugin._state.reconcile_suppress[control.UNIT_MODE] = time.monotonic() + 1000
+    plugin._state.beat = 2  # next beat -> 3, live
+    plugin.onHeartbeat()
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 10  # suppressed
+
+
 class _DiscoveryClient(_FakeClient):
     def __init__(self, outcomes):
         super().__init__()

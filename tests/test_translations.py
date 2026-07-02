@@ -39,13 +39,15 @@ def test_mode_level_names_english():
 
 
 def test_boost_level_names_english():
-    assert control_level_names("boost", "English") == "Stop|Manual Boost|Smart Boost"
+    assert control_level_names("boost", "English") == "Manual|Smart|Stop All"
 
 
 def test_boost_level_names_nederlands():
-    assert control_level_names("boost", "Nederlands") == "Stop|Handmatige Boost|Slimme Boost"
+    assert control_level_names("boost", "Nederlands") == "Handmatig|Slim|Alles stoppen"
 
 
 def test_control_device_name_localised():
     assert control_device_name("mode", "English") == "Charge Mode"
+    assert control_device_name("boost", "English") == "Boost Settings"
+    assert control_device_name("boost", "Nederlands") == "Boost Instellingen"
     assert isinstance(control_device_name("lock_state", "Nederlands"), str)

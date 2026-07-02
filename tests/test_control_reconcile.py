@@ -55,7 +55,7 @@ def test_mode_and_boost_hide_level_zero_slot():
     assert updates[UNIT_MODE].options["LevelOffHidden"] == "true"
     assert updates[UNIT_MODE].options["LevelNames"] == "Off|Fast|Eco|Eco+|Stopped"
     assert updates[UNIT_BOOST].options["LevelOffHidden"] == "true"
-    assert updates[UNIT_BOOST].options["LevelNames"] == "Off|Stop|Manual Boost|Smart Boost"
+    assert updates[UNIT_BOOST].options["LevelNames"] == "Off|Manual|Smart|Stop All"
 
 
 def test_mode_absent_field_not_reconciled():
@@ -83,16 +83,16 @@ def test_lock_state_emitted_when_control_on():
     assert "Locked Now" in updates[UNIT_LOCK_STATE].svalue
 
 
-def test_boost_resting_level_stop_when_inactive():
-    assert boost_resting_level({"bsm": 0}) == 10
+def test_boost_resting_level_hidden_when_inactive():
+    assert boost_resting_level({"bsm": 0}) == 0
 
 
 def test_boost_resting_level_manual_when_active():
-    assert boost_resting_level({"bsm": 1}) == 20
+    assert boost_resting_level({"bsm": 1}) == 10
 
 
 def test_boost_resting_level_smart_when_active():
-    assert boost_resting_level({"bsm": 2}) == 30
+    assert boost_resting_level({"bsm": 2}) == 20
 
 
 def test_control_on_emits_boost_and_green_widgets():

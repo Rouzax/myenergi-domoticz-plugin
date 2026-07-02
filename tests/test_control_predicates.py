@@ -1,4 +1,4 @@
-from control import allow_write_now, should_debounce, write_succeeded
+from control import DeviceUpdate, allow_write_now, is_noop_update, should_debounce, write_succeeded
 
 
 def test_write_succeeded_per_endpoint():
@@ -19,3 +19,25 @@ def test_should_debounce_within_gap():
 def test_allow_write_now_rate_cap():
     assert allow_write_now(now=100.0, last_any_ts=99.5, min_gap=1.0) is False
     assert allow_write_now(now=101.5, last_any_ts=100.0, min_gap=1.0) is True
+
+
+def _update(nvalue, svalue):
+    return DeviceUpdate(
+        unit=12, type_name="Selector Switch", options={}, name="x", nvalue=nvalue, svalue=svalue
+    )
+
+
+def test_is_noop_update_true_when_unchanged():
+    assert is_noop_update(20, "20", _update(20, "20")) is True
+
+
+def test_is_noop_update_false_when_nvalue_differs():
+    assert is_noop_update(10, "20", _update(20, "20")) is False
+
+
+def test_is_noop_update_false_when_svalue_differs():
+    assert is_noop_update(20, "10", _update(20, "20")) is False
+
+
+def test_is_noop_update_compares_svalue_as_string():
+    assert is_noop_update(0, 40, _update(0, "40")) is True

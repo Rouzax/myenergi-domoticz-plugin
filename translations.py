@@ -24,13 +24,13 @@ _CONTROL_LEVELS = {
         "Nederlands": "Snel|Eco|Eco+|Gestopt",
     },
     "boost": {
-        "English": "Stop|Manual Boost|Smart Boost",
-        "Nederlands": "Stop|Handmatige Boost|Slimme Boost",
+        "English": "Manual|Smart|Stop All",
+        "Nederlands": "Handmatig|Slim|Alles stoppen",
     },
 }
 _CONTROL_NAMES = {
     "mode": {"English": "Charge Mode", "Nederlands": "Laadmodus"},
-    "boost": {"English": "Boost", "Nederlands": "Boost"},
+    "boost": {"English": "Boost Settings", "Nederlands": "Boost Instellingen"},
     "boost_kwh": {"English": "Boost kWh", "Nederlands": "Boost kWh"},
     "boost_time": {"English": "Boost Complete By", "Nederlands": "Boost Klaar Om"},
     "min_green": {"English": "Min Green Level", "Nederlands": "Min Groen Niveau"},

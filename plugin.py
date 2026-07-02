@@ -270,6 +270,20 @@ def onHeartbeat():
         hub_date = _hub_date(status.zappi) if is_refresh else None
         Domoticz.Debug(f"heartbeat beat={st.beat} refresh={is_refresh} hub_date={hub_date}")
 
+        # Control reconcile runs on every heartbeat (live cadence), not just the
+        # counter refresh, so external/app changes to mode/boost/min-green/lock
+        # reflect within one live poll. The no-op filter keeps DB churn near zero
+        # for near-static control widgets: only a value that actually changed
+        # (and is not under reconcile-suppression from a just-issued command) is
+        # applied.
+        now = time.monotonic()
+        control_updates = control.plan_control_updates(
+            status, st.config, _existing_units(devices, did)
+        )
+        control_updates = _filter_control_updates(
+            devices, did, control_updates, st.reconcile_suppress, now
+        )
+
         if is_refresh and hub_date:
             state = domoticz_api.load_state()
             missing = missing_dates(state.last_processed_date or hub_date, hub_date)
@@ -292,11 +306,7 @@ def onHeartbeat():
             updates = updates + plan_harvi_updates(
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
-            updates = updates + control.plan_control_updates(
-                status, st.config, _existing_units(devices, did)
-            )
-            now = time.monotonic()
-            updates = [u for u in updates if st.reconcile_suppress.get(u.unit, 0) <= now]
+            updates = updates + control_updates
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
             Domoticz.Debug(f"apply units={len(updates)}")
             state = replace(state, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
@@ -313,6 +323,7 @@ def onHeartbeat():
             updates = updates + plan_harvi_updates(
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
+            updates = updates + control_updates
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
             Domoticz.Debug(f"apply units={len(updates)}")
             if st.auto_names != before_names or alloc_changed:
@@ -351,6 +362,30 @@ def _dispatch_write(client, serial, intent):
 def _existing_units(devices, did):
     dev = devices.get(did) if devices else None
     return frozenset(dev.Units.keys()) if dev is not None else frozenset()
+
+
+def _current_unit_values(devices, did, units):
+    dev = devices.get(did) if devices else None
+    values = {}
+    if dev is not None:
+        for unit in units:
+            u = dev.Units.get(unit)
+            if u is not None:
+                values[unit] = (u.nValue, u.sValue)
+    return values
+
+
+def _filter_control_updates(devices, did, updates, reconcile_suppress, now):
+    current = _current_unit_values(devices, did, [u.unit for u in updates])
+    kept = []
+    for u in updates:
+        if reconcile_suppress.get(u.unit, 0) > now:
+            continue
+        cur = current.get(u.unit)
+        if cur is not None and control.is_noop_update(cur[0], cur[1], u):
+            continue
+        kept.append(u)
+    return kept
 
 
 def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
