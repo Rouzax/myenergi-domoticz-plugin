@@ -69,7 +69,7 @@ UNIT_VOLTAGE = 8
 UNIT_FREQUENCY = 9
 UNIT_GRID_IMPORT = 10
 UNIT_GRID_EXPORT = 11
-SOLAR_RETURN_SWITCHTYPE = 4
+RETURN_SWITCHTYPE = 4  # Domoticz "Return" meter type (energy returned to grid / generation)
 AGG_UNITS = {
     "solar": UNIT_SOLAR,
     "home": UNIT_HOME,
@@ -160,7 +160,7 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
             powers["solar"],
             energies["solar"],
             lang,
-            switchtype=SOLAR_RETURN_SWITCHTYPE,
+            switchtype=RETURN_SWITCHTYPE,
         ),
         _kwh(UNIT_HOME, "home", powers["home"], energies["home"], lang),
         _kwh(UNIT_EV, "ev", powers["ev"], energies["ev"], lang),
@@ -187,7 +187,14 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
             f"{_float(z.get('frq')):.2f}",
         ),
         _kwh(UNIT_GRID_IMPORT, "grid_import", powers["grid_import"], energies["grid_import"], lang),
-        _kwh(UNIT_GRID_EXPORT, "grid_export", powers["grid_export"], energies["grid_export"], lang),
+        _kwh(
+            UNIT_GRID_EXPORT,
+            "grid_export",
+            powers["grid_export"],
+            energies["grid_export"],
+            lang,
+            switchtype=RETURN_SWITCHTYPE,
+        ),
     ]
     return updates, new_state
 

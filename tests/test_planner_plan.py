@@ -99,11 +99,11 @@ def test_solar_total_has_return_switchtype():
     prev = {UNIT_SOLAR: 5000.0}
     updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
     u = _by_unit(updates)
-    assert u[UNIT_SOLAR].switchtype == 4
+    assert u[UNIT_SOLAR].switchtype == 4  # Return (generation)
     assert u[UNIT_HOME].switchtype == 0
     assert u[UNIT_EV].switchtype == 0
-    assert u[UNIT_GRID_IMPORT].switchtype == 0
-    assert u[UNIT_GRID_EXPORT].switchtype == 0
+    assert u[UNIT_GRID_IMPORT].switchtype == 0  # Usage (from grid)
+    assert u[UNIT_GRID_EXPORT].switchtype == 4  # Return (to grid)
 
 
 def test_grid_export_when_exporting():

@@ -27,7 +27,7 @@ Eleven fixed devices appear in Domoticz, plus one extra device per harvi:
 | 8 | Supply Voltage | Voltage (V) | Grid voltage |
 | 9 | Supply Frequency | Custom (Hz) | Grid frequency |
 | 10 | Grid Import | kWh | Power drawn from the grid + cumulative counter |
-| 11 | Grid Export | kWh | Power fed back to the grid + cumulative counter |
+| 11 | Grid Export | kWh | Power fed back to the grid + cumulative counter; created as Domoticz "Return" type |
 | 20+ | one per harvi | Usage (W) or Custom (W) | Live power measured by each harvi (see below) |
 
 The five kWh devices (Solar Total, Home Consumption, EV Charging, Grid Import, Grid Export)
@@ -40,8 +40,14 @@ Each harvi becomes its own live-power device. A harvi whose CTs measure generati
 Usage (W) device with a sun icon; a harvi clamped to anything else (a load, a battery) is a
 signed Custom (W) sensor so a battery's charge/discharge (+/-) renders correctly. Harvis carry
 no cumulative energy: the myenergi API exposes only their instantaneous power, so these devices
-are watts-only. Each is named `Harvi <serial>` by default; rename it in Domoticz (the plugin
-never overwrites your rename) or set friendly names in the Harvi Names setting.
+are watts-only. Each is named `Harvi <serial>` by default.
+
+**Naming a harvi.** The easiest way is to just rename the `Harvi <serial>` device in Domoticz
+(match it to the right inverter by its live watts); the plugin never overwrites your rename. If
+you prefer names that survive deleting and recreating the device, use the optional "Harvi Names"
+slots in the hardware settings: copy the serial from the device name into a `Harvi N serial`
+field and type the friendly name in `Harvi N name` (up to four). A harvi with no matching slot
+keeps its default name.
 
 **Note on inverter totals:** the per-inverter (harvi) power devices and Solar Total are
 independent readings from myenergi. Each harvi reports wirelessly to the hub on its own cadence,
