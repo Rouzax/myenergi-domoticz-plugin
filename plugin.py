@@ -28,13 +28,40 @@
 </plugin>
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import Domoticz
 
 import domoticz_api
 from config import parse_config
+from energy import missing_dates
+from model import parse_jday, parse_jstatus
 from myenergi_client import MyEnergiClient
+from persistence import PluginState
+from planner import AGG_UNITS, advance_baselines, plan
+
+_MAX_BACKFILL_DAYS = 14
+
+
+def _hardware_id():
+    # Parameters is injected by the framework at runtime; may be absent in tests.
+    params = globals().get("Parameters") or {}
+    try:
+        return int(params.get("HardwareID", 0))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _hub_date(zappi):
+    dat = str(zappi.get("dat", ""))
+    parts = dat.split("-")
+    if len(parts) == 3:
+        try:
+            d, m, y = parts
+            return f"{int(y):04d}-{int(m):02d}-{int(d):02d}"
+        except (ValueError, TypeError):
+            return None  # malformed cloud date -> fall through to the live path
+    return None
 
 
 @dataclass
@@ -74,4 +101,55 @@ def onStop():
 
 
 def onHeartbeat():
-    pass
+    st = _state
+    if st.client is None or st.config is None:
+        return
+    try:
+        st.beat += 1
+        did = domoticz_api.device_id(_hardware_id())
+        status = parse_jstatus(st.client.fetch_status())
+        if not status.zappi:
+            return
+        prev = domoticz_api.read_prev_counters(did, list(AGG_UNITS.values()))
+        max_step = st.config.max_system_kw * 1000.0 * (st.config.counter_interval / 3600.0) * 4.0
+        serial = st.config.hub_serial
+
+        is_refresh = (st.beat % st.counter_every) == 0
+        hub_date = _hub_date(status.zappi) if is_refresh else None
+
+        if is_refresh and hub_date:
+            state = domoticz_api.load_state()
+            missing = missing_dates(state.last_processed_date or hub_date, hub_date)
+            if len(missing) > _MAX_BACKFILL_DAYS:
+                domoticz_api.log_redacted(
+                    Domoticz.Error,
+                    f"myenergi backfill truncated: {len(missing)} missing days; folding "
+                    f"{missing[0]}..{missing[_MAX_BACKFILL_DAYS - 1]}; "
+                    f"{missing[_MAX_BACKFILL_DAYS]}..{missing[-1]} permanently skipped (reset plugin state to recover)",
+                    st.config.api_key,
+                )
+                missing = missing[:_MAX_BACKFILL_DAYS]
+            backfill = [parse_jday(st.client.fetch_jday("Z", serial, d)) for d in missing]
+            today_raw = parse_jday(st.client.fetch_jday("Z", serial, hub_date))
+            state = advance_baselines(
+                state, backfill, today_raw, prev, AGG_UNITS, st.config.max_system_kw, hub_date
+            )
+            updates, state = plan(status, today_raw, state, prev, st.config, max_step)
+            st.auto_names = domoticz_api.apply_updates(did, updates, st.auto_names)
+            state = replace(state, auto_names=st.auto_names)  # persist name-ownership
+            domoticz_api.save_state(state)
+        else:
+            # Live beat (or refresh with no hub date): update power/status only.
+            # No load_state (base_wh is unused when today_sums is None).
+            before_names = st.auto_names
+            updates, _ = plan(status, None, PluginState(), prev, st.config, max_step)
+            st.auto_names = domoticz_api.apply_updates(did, updates, st.auto_names)
+            if st.auto_names != before_names:
+                # Devices were just created on this live beat; persist ownership now
+                # so a crash before the first refresh beat cannot lose it.
+                saved = domoticz_api.load_state()
+                domoticz_api.save_state(replace(saved, auto_names=st.auto_names))
+    except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
+        domoticz_api.log_redacted(
+            Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
+        )
