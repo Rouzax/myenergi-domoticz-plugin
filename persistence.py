@@ -11,8 +11,9 @@ class PluginState:
     """Persisted plugin state serialized to/from Domoticz.Configuration().
 
     Key domains:
-    - unit_alloc: device SERIAL string -> block base Unit (int). Tracks the
-      Domoticz unit number allocated as the start of each device's block.
+    - unit_alloc: device SERIAL string -> Domoticz Unit number (int). Assigns a
+      stable Unit per dynamically-discovered device (e.g. one per harvi), so a
+      device keeps the same Unit across restarts.
     - base_wh: Domoticz Unit number (as string) -> cumulative Wh baseline
       (float). Stores the folded energy total so live session values are added
       on top without double-counting days already processed.

@@ -140,6 +140,9 @@ def test_live_beat_persists_auto_names_on_device_creation():
     }
     assert auto_names["1"] == "Solar Total"
     assert auto_names["4"] == "Zappi Mode"
+    # The harvi's serial -> Unit allocation is persisted so it survives restarts.
+    unit_alloc = json.loads(state_json).get("unit_alloc", {})
+    assert unit_alloc == {"19000001": 20}
 
 
 def test_heartbeat_creates_grid_and_harvi_devices():

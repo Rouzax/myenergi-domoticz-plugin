@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from config import Config
-from model import parse_jstatus
+from model import SystemStatus, parse_jstatus
 from persistence import PluginState
 from planner import (
     UNIT_CHARGE_STATUS,
@@ -104,3 +104,12 @@ def test_solar_total_has_return_switchtype():
     assert u[UNIT_EV].switchtype == 0
     assert u[UNIT_GRID_IMPORT].switchtype == 0
     assert u[UNIT_GRID_EXPORT].switchtype == 0
+
+
+def test_grid_export_when_exporting():
+    # Negative grd means exporting: import power is 0, export power is +abs(grd).
+    z = {"gen": 0, "grd": -500, "div": 0, "vol": 2300, "frq": 50.0, "sta": 1, "pst": "A", "zmo": 1}
+    updates, _ = plan(SystemStatus(devices=[], zappi=z), None, PluginState(), {}, CFG, max_step_wh=1e6)
+    u = _by_unit(updates)
+    assert u[UNIT_GRID_IMPORT].svalue.startswith("0;")
+    assert u[UNIT_GRID_EXPORT].svalue.startswith("500;")

@@ -13,11 +13,11 @@ Author: **Rouzax**
 ## What it does
 
 Each poll cycle retrieves live status and per-minute energy history from the myenergi cloud.
-Nine devices appear in Domoticz:
+Eleven fixed devices appear in Domoticz, plus one extra device per harvi:
 
 | Unit | Device name | Type | Notes |
 |------|-------------|------|-------|
-| 1 | Solar Total | kWh | Instantaneous solar generation + cumulative counter |
+| 1 | Solar Total | kWh | Total solar generation (all inverters) + cumulative counter; created as Domoticz "Return" type |
 | 2 | Home Consumption | kWh | Derived: generation + grid import - grid export - EV charge |
 | 3 | EV Charging | kWh | Power delivered to the vehicle + cumulative counter |
 | 4 | Zappi Mode | Text | Current operating mode (e.g. Fast, Eco, Eco+, Stop) |
@@ -26,10 +26,27 @@ Nine devices appear in Domoticz:
 | 7 | Charge Added | Custom (kWh) | Energy added in the current charging session |
 | 8 | Supply Voltage | Voltage (V) | Grid voltage |
 | 9 | Supply Frequency | Custom (Hz) | Grid frequency |
+| 10 | Grid Import | kWh | Power drawn from the grid + cumulative counter |
+| 11 | Grid Export | kWh | Power fed back to the grid + cumulative counter |
+| 20+ | one per harvi | Usage (W) or Custom (W) | Live power measured by each harvi (see below) |
 
-The three kWh devices (Solar Total, Home Consumption, EV Charging) carry both an
-instantaneous power reading and a real cumulative counter. The counter is built from
-myenergi's per-minute energy history and persists across Domoticz restarts.
+The five kWh devices (Solar Total, Home Consumption, EV Charging, Grid Import, Grid Export)
+carry both an instantaneous power reading and a real cumulative counter. The counter is built
+from myenergi's per-minute energy history and persists across Domoticz restarts.
+
+### Harvi devices (per inverter / circuit)
+
+Each harvi becomes its own live-power device. A harvi whose CTs measure generation (solar) is a
+Usage (W) device with a sun icon; a harvi clamped to anything else (a load, a battery) is a
+signed Custom (W) sensor so a battery's charge/discharge (+/-) renders correctly. Harvis carry
+no cumulative energy: the myenergi API exposes only their instantaneous power, so these devices
+are watts-only. Each is named `Harvi <serial>` by default; rename it in Domoticz (the plugin
+never overwrites your rename) or set friendly names in the Harvi Names setting.
+
+**Note on inverter totals:** the per-inverter (harvi) power devices and Solar Total are
+independent readings from myenergi. Each harvi reports wirelessly to the hub on its own cadence,
+so at any given instant the individual inverter figures may not add up exactly to Solar Total.
+This is normal timing behavior, not a plugin error; over time the cumulative counters converge.
 
 ---
 
