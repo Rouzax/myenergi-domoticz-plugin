@@ -41,6 +41,22 @@
                 </options>
             </param>
         </group>
+        <group label="Control (opt-in)">
+            <param field="AllowControl" label="Allow Control" width="150px">
+                <description>Enable charger control (mode changes, boost, min-green). Off by default: the plugin stays strictly read-only until this is turned on.</description>
+                <options>
+                    <option label="No" value="false" default="true"/>
+                    <option label="Yes" value="true"/>
+                </options>
+            </param>
+            <param field="AllowLock" label="Allow Lock" width="150px">
+                <description>Enable charger lock/unlock control. Off by default; independent of Allow Control.</description>
+                <options>
+                    <option label="No" value="false" default="true"/>
+                    <option label="Yes" value="true"/>
+                </options>
+            </param>
+        </group>
         <group label="Harvi Names (optional)">
             <param field="Harvi1Serial" label="Harvi 1 serial" width="120px">
                 <description>Optional. To give a harvi a friendly name, copy its serial from the auto-created 'Harvi &lt;serial&gt;' device (match it by its live watts) and enter it here. Easiest alternative: just rename the device in Domoticz - the plugin never overwrites your rename.</description>
@@ -110,6 +126,12 @@ class _PluginState:
     counter_every: int = 6
     auto_names: dict = field(default_factory=dict)
     unit_alloc: dict = field(default_factory=dict)
+    zappi_serial: "str | None" = None
+    last_write: dict = field(default_factory=dict)
+    last_any_write_ts: float = 0.0
+    discovery_backoff_ts: float = 0.0
+    mode_text_hidden: bool = False
+    reconcile_suppress: dict = field(default_factory=dict)
 
 
 _state = _PluginState()
@@ -133,11 +155,17 @@ def onStart():
         _restored = domoticz_api.load_state()
         _state.auto_names = _restored.auto_names
         _state.unit_alloc = _restored.unit_alloc
+        _state.mode_text_hidden = _restored.mode_text_hidden
     except Exception:  # noqa: BLE001
         _state.auto_names = {}
         _state.unit_alloc = {}
     try:
-        _state.client = MyEnergiClient(cfg.hub_serial, cfg.api_key)
+        _state.client = MyEnergiClient(
+            cfg.hub_serial,
+            cfg.api_key,
+            writes_enabled=cfg.allow_control,
+            lock_enabled=cfg.allow_lock,
+        )
         _state.client.discover_from_director()
         Domoticz.Debug(f"discovery ok: base={_state.client.base_url}")
     except Exception as exc:  # noqa: BLE001 - never let onStart crash the framework
