@@ -2,6 +2,8 @@
 
 import Domoticz
 
+import persistence
+
 
 def device_id(hardware_id) -> str:
     return f"myenergi_hub{hardware_id}"
@@ -47,3 +49,28 @@ def apply_updates(dev_id, updates, auto_names) -> dict:
             # name and NEVER claim ownership of a name we did not set.
             unit.Update(Log=False)
     return names
+
+
+def read_prev_counters(dev_id, units) -> dict:
+    out = {}
+    for unit in units:
+        u = _existing_unit(dev_id, unit)
+        wh = 0.0
+        if u is not None and ";" in str(u.sValue):
+            try:
+                wh = float(str(u.sValue).split(";", 1)[1])
+            except (ValueError, IndexError):
+                wh = 0.0
+        out[unit] = wh
+    return out
+
+
+def load_state():
+    return persistence.loads(Domoticz.Configuration().get("state", ""))
+
+
+def save_state(state) -> None:
+    # Read-modify-write so other Configuration keys (future plans) are preserved.
+    cfg = Domoticz.Configuration()
+    cfg["state"] = persistence.dumps(state)
+    Domoticz.Configuration(cfg)
