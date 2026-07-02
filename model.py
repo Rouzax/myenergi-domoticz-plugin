@@ -117,7 +117,24 @@ def parse_feed_mapping(text: str, valid_serials: "set[str]"):
 
 
 JDAY_MAX_ROWS = 2000
-_ENERGY_FIELDS = {"imp", "exp", "gep", "gen", "pect1", "pect2", "pect3", "nect1", "nect2", "nect3"}
+_ENERGY_FIELDS = {
+    "imp",
+    "exp",
+    "gep",
+    "gen",
+    "pect1",
+    "pect2",
+    "pect3",
+    "nect1",
+    "nect2",
+    "nect3",
+    "h1d",
+    "h2d",
+    "h3d",
+    "h1b",
+    "h2b",
+    "h3b",
+}
 
 
 def _jday_rows(payload: dict) -> list:
