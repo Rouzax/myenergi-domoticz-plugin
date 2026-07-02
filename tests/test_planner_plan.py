@@ -4,7 +4,17 @@ from pathlib import Path
 from config import Config
 from model import parse_jstatus
 from persistence import PluginState
-from planner import UNIT_EV, UNIT_PLUG, UNIT_SOLAR, UNIT_VOLTAGE, plan
+from planner import (
+    UNIT_CHARGE_STATUS,
+    UNIT_EV,
+    UNIT_FREQUENCY,
+    UNIT_HOME,
+    UNIT_MODE,
+    UNIT_PLUG,
+    UNIT_SOLAR,
+    UNIT_VOLTAGE,
+    plan,
+)
 
 _fixture_path = Path(__file__).parent / "fixtures" / "jstatus.json"
 STATUS = parse_jstatus(json.loads(_fixture_path.read_text()))
@@ -30,6 +40,36 @@ def test_live_beat_keeps_prior_energy():
     assert u[UNIT_PLUG].svalue == "Disconnected"
     # Voltage 2343 -> 234.3
     assert u[UNIT_VOLTAGE].svalue == "234.3"
+
+
+def test_live_beat_remaining_devices():
+    # Covers the five units not asserted in test_live_beat_keeps_prior_energy:
+    # Home (2), EV (3), Zappi Mode (4), Charge Status (5), Frequency (9).
+    # Fixture: gen=1215, grd=734, div=0, che=2.34, frq=5001, zmo=1, sta=4, pst="A"
+    state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
+    prev = {UNIT_SOLAR: 5000.0}
+    updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
+    u = _by_unit(updates)
+
+    # Home: power = max(0, gen + grd - div) = 1215 + 734 - 0 = 1949; energy = prev 0.0
+    assert u[UNIT_HOME].type_name == "kWh"
+    assert u[UNIT_HOME].svalue == "1949;0.0000"
+
+    # EV: power = div = 0; energy = prev 0.0
+    assert u[UNIT_EV].type_name == "kWh"
+    assert u[UNIT_EV].svalue == "0;0.0000"
+
+    # Zappi Mode: zmo=1 -> "Fast"
+    assert u[UNIT_MODE].type_name == "Text"
+    assert u[UNIT_MODE].svalue == "Fast"
+
+    # Charge Status: sta=4 -> "Boosting"
+    assert u[UNIT_CHARGE_STATUS].type_name == "Text"
+    assert u[UNIT_CHARGE_STATUS].svalue == "Boosting"
+
+    # Frequency: frq=5001 -> 50.01 Hz
+    assert u[UNIT_FREQUENCY].type_name == "Custom"
+    assert u[UNIT_FREQUENCY].svalue == "50.01"
 
 
 def test_refresh_beat_sets_counter_from_base_plus_today():

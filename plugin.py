@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false, reportUndefinedVariable=false, reportAttributeAccessIssue=false
 """\
 <plugin key="myenergi" name="myenergi (zappi/harvi) Monitor" author="Rouzax" version="1.0.0" externallink="https://github.com/Rouzax">
     <description>

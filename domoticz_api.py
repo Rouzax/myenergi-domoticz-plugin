@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 """Thin adapter over the DomoticzEx device API. The ONLY module importing Domoticz."""
 
 import Domoticz
@@ -44,9 +45,10 @@ def apply_updates(dev_id, updates, auto_names) -> dict:
             unit.Update(Log=False, UpdateProperties=True)
             names[str(up.unit)] = up.name
         else:
-            # Not owned: the user renamed it, or ownership is unknown (fresh start
-            # before any persisted auto_names). Update values only; NEVER write the
-            # name and NEVER claim ownership of a name we did not set.
+            # Not owned (user renamed it, or ownership is unknown from a fresh start
+            # before any persisted auto_names), OR owned but the name is already
+            # correct and unchanged. In both cases: update values only; NEVER write
+            # the name and NEVER claim ownership of a name we did not set.
             unit.Update(Log=False)
     return names
 
