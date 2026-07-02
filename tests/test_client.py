@@ -189,6 +189,18 @@ class TestWriteMethods:
         c.set_boost_smart("10000001", 5, "1400")
         assert rec.url == "https://s18.myenergi.net/cgi-zappi-mode-Z10000001-0-11-5-1400"
 
+    def test_smart_boost_rejects_path_injection(self):
+        c, rec = _write_client()
+        with pytest.raises(WriteError):
+            c.set_boost_smart("10000001", 5, "../evil")
+        assert rec.url is None
+
+    def test_smart_boost_rejects_wrong_length(self):
+        c, rec = _write_client()
+        with pytest.raises(WriteError):
+            c.set_boost_smart("10000001", 5, "140")
+        assert rec.url is None
+
     def test_manual_boost_url(self):
         c, rec = _write_client()
         c.set_boost_manual("10000001", 5)
@@ -208,6 +220,18 @@ class TestWriteMethods:
         c, rec = _write_client()
         c.set_lock("10000001", "01000000")
         assert rec.url == "https://s18.myenergi.net/cgi-jlock-10000001-01000000"
+
+    def test_lock_rejects_path_injection(self):
+        c, rec = _write_client()
+        with pytest.raises(WriteError):
+            c.set_lock("10000001", "0100/000")
+        assert rec.url is None
+
+    def test_lock_rejects_wrong_length(self):
+        c, rec = _write_client()
+        with pytest.raises(WriteError):
+            c.set_lock("10000001", "012")
+        assert rec.url is None
 
     def test_write_requires_base_url(self):
         c, _ = _write_client()

@@ -122,6 +122,8 @@ class MyEnergiClient:
         return self._control_get(serial, path, self._writes_enabled)
 
     def set_boost_smart(self, serial, kwh, hhmm):
+        if not (isinstance(hhmm, str) and len(hhmm) == 4 and hhmm.isdigit()):
+            raise WriteError("invalid hhmm")
         path = f"/cgi-zappi-mode-Z{serial}-0-11-{int(kwh)}-{hhmm}"
         return self._control_get(serial, path, self._writes_enabled)
 
@@ -134,5 +136,7 @@ class MyEnergiClient:
         return self._control_get(serial, path, self._writes_enabled)
 
     def set_lock(self, serial, bitmask):
+        if not (isinstance(bitmask, str) and len(bitmask) == 8 and set(bitmask) <= {"0", "1"}):
+            raise WriteError("invalid bitmask")
         path = f"/cgi-jlock-{serial}-{bitmask}"
         return self._control_get(serial, path, self._lock_enabled)
