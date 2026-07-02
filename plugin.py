@@ -20,23 +20,27 @@
                 <option label="Nederlands" value="Nederlands"/>
             </options>
         </param>
-        <param field="LivePoll" type="number" label="Live Poll Interval (s)" min="15" max="300" default="20" width="100px">
-            <description>How often to poll live power and status, in seconds (15 to 300). myenergi data updates about once per second, so 15 to 30s is plenty and gentle on their cloud.</description>
-        </param>
-        <param field="CounterEvery" type="number" label="Counter Refresh (every N live polls)" min="1" max="60" default="6" width="100px">
-            <description>How often to refresh the cumulative kWh counters from myenergi's energy history, expressed as a multiple of the live poll interval (1 to 60). At the default 20s live poll, 6 refreshes the counters every 120s. 1 = refresh on every live poll (heaviest on myenergi's cloud).</description>
-        </param>
-        <param field="MaxSystemKW" type="number" label="Max System Power (kW)" min="1" max="100" default="25" width="100px">
-            <description>Total system power ceiling in kW, used as a sanity clamp on counter jumps. Set it roughly to your combined solar plus grid plus charger capacity.</description>
-        </param>
-        <param field="DebugLevel" label="Debug Level" width="150px">
-            <description>Logging verbosity. None for normal use; Basic or Verbose for troubleshooting. The API key is never written to the log at any level.</description>
-            <options>
-                <option label="None" value="0" default="true"/>
-                <option label="Basic" value="1"/>
-                <option label="Verbose" value="2"/>
-            </options>
-        </param>
+        <group label="Polling">
+            <param field="LivePoll" type="number" label="Live Poll Interval (s)" min="15" max="300" step="5" default="20" width="100px">
+                <description>How often to poll live power and status, in seconds (15 to 300). myenergi data updates about once per second, so 15 to 30s is plenty and gentle on their cloud.</description>
+            </param>
+            <param field="CounterEvery" type="number" label="Counter Refresh (every N live polls)" min="1" max="60" step="1" default="6" width="100px">
+                <description>How often to refresh the cumulative kWh counters from myenergi's energy history, expressed as a multiple of the live poll interval (1 to 60). At the default 20s live poll, 6 refreshes the counters every 120s. 1 = refresh on every live poll (heaviest on myenergi's cloud).</description>
+            </param>
+        </group>
+        <group label="Advanced">
+            <param field="MaxSystemKW" type="number" label="Max System Power (kW)" min="1" max="100" step="1" default="25" width="100px">
+                <description>Total system power ceiling in kW, used as a sanity clamp on counter jumps. Set it roughly to your combined solar plus grid plus charger capacity.</description>
+            </param>
+            <param field="DebugLevel" label="Debug Level" width="150px">
+                <description>Logging verbosity. None for normal use; Basic or Verbose for troubleshooting. The API key is never written to the log at any level.</description>
+                <options>
+                    <option label="None" value="0" default="true"/>
+                    <option label="Basic" value="1"/>
+                    <option label="Verbose" value="2"/>
+                </options>
+            </param>
+        </group>
     </params>
 </plugin>
 """
