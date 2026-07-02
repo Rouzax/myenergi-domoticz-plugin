@@ -33,6 +33,7 @@ class MyEnergiClient:
         writes_enabled=False,
         lock_enabled=False,
         control_timeout=5,
+        discovery_timeout=10,
     ):
         self._serial = serial
         self._api_key = api_key
@@ -41,6 +42,7 @@ class MyEnergiClient:
         self._writes_enabled = writes_enabled
         self._lock_enabled = lock_enabled
         self._control_timeout = control_timeout
+        self._discovery_timeout = discovery_timeout
         # Digest credentials scoped to *.myenergi.net so urllib will not emit
         # Authorization to any other host even if a redirect slips through.
         # HTTPPasswordMgrWithDefaultRealm is required so find_user_password falls
@@ -101,7 +103,7 @@ class MyEnergiClient:
         req = urllib.request.Request(
             f"{DIRECTOR_URL}/cgi-jstatus-E", headers={"User-Agent": "Domoticz-myenergi"}
         )
-        with opener.open(req, timeout=15) as resp:
+        with opener.open(req, timeout=self._discovery_timeout) as resp:
             return self.discover_asn(dict(resp.headers))
 
     def _control_get(self, serial, path, allow):

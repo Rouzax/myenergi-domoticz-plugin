@@ -43,7 +43,7 @@
         </group>
         <group label="Control (opt-in)">
             <param field="AllowControl" label="Allow Control" width="150px">
-                <description>Enable charger control (mode changes, boost, min-green). Off by default: the plugin stays strictly read-only until this is turned on.</description>
+                <description>Enable charger control (mode changes, boost, min-green). Off by default: the plugin stays strictly read-only until this is turned on. Once enabled, any Domoticz user, scene, timer, or API client with access to this hardware can command the charger.</description>
                 <options>
                     <option label="No" value="false" default="true"/>
                     <option label="Yes" value="true"/>
@@ -177,6 +177,7 @@ def onStart():
         Domoticz.Debug(f"discovery ok: base={_state.client.base_url}")
     except Exception as exc:  # noqa: BLE001 - never let onStart crash the framework
         domoticz_api.log_redacted(Domoticz.Error, f"myenergi discovery failed: {exc}", cfg.api_key)
+        _state.discovery_failing = True
 
 
 def onStop():

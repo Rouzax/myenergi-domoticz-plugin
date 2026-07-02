@@ -39,9 +39,11 @@ class _FakeOpener:
     def __init__(self, response: _FakeResponse):
         self._response = response
         self.urls: list = []
+        self.timeouts: list = []
 
-    def open(self, req, timeout=None):  # noqa: ARG002
+    def open(self, req, timeout=None):
         self.urls.append(req.full_url)
+        self.timeouts.append(timeout)
         return self._response
 
 
@@ -65,6 +67,20 @@ class TestTransport:
         assert asn == "s18.myenergi.net"
         assert client.base_url == "https://s18.myenergi.net"
         assert fake_opener.urls == ["https://director.myenergi.net/cgi-jstatus-E"]
+
+    def test_discover_from_director_uses_short_timeout(self):
+        """The director GET must use a short timeout so a wedged plugin does not
+        block the single worker thread; the read path keeps its own 15s default."""
+        body = json.dumps([{"E": {"sno": 20000001}}]).encode()
+        response = _FakeResponse(body, {"X_MYENERGI-asn": "s18.myenergi.net"})
+        fake_opener = _FakeOpener(response)
+        client = MyEnergiClient(
+            serial="20000001",
+            api_key="TESTKEY",
+            opener_factory=lambda: fake_opener,
+        )
+        client.discover_from_director()
+        assert fake_opener.timeouts == [10]
 
     def test_fetch_status_after_discovery(self):
         """fetch_status() requests cgi-jstatus-* on the discovered ASN host."""

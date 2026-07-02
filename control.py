@@ -152,7 +152,7 @@ def allow_write_now(now, last_any_ts, min_gap) -> bool:
 
 def _selector_options(kind, language, style="1"):
     return {
-        "LevelActions": "|" * len(control_level_names(kind, language).split("|")),
+        "LevelActions": "|" * (len(control_level_names(kind, language).split("|")) - 1),
         "LevelNames": control_level_names(kind, language),
         "LevelOffHidden": "false",
         "SelectorStyle": style,
@@ -243,7 +243,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
     zappi = status.zappi if isinstance(status.zappi, dict) else {}
     if config.allow_control:
         zmo = zappi.get("zmo")
-        if isinstance(zmo, int) and zmo in ZMO_TO_LEVEL:
+        if isinstance(zmo, int) and not isinstance(zmo, bool) and zmo in ZMO_TO_LEVEL:
             updates.append(
                 DeviceUpdate(
                     unit=UNIT_MODE,
@@ -290,7 +290,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                 )
             )
         mgl = zappi.get("mgl")
-        if isinstance(mgl, int):
+        if isinstance(mgl, int) and not isinstance(mgl, bool):
             updates.append(
                 DeviceUpdate(
                     unit=UNIT_MIN_GREEN,

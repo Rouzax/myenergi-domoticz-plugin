@@ -123,6 +123,49 @@ def test_oncommand_confirm_uses_short_timeout():
     assert plugin._CONFIRM_TIMEOUT == 5
 
 
+_DIGEST_ARTIFACTS = ("Authorization", "WWW-Authenticate", "nonce=", "realm=", "qop=", "cnonce=")
+
+
+def test_oncommand_write_never_leaks_authorization_or_digest_artifacts():
+    # Security requirement: nothing in the onCommand write path (dispatch,
+    # optimistic apply, confirm) may ever log the digest Authorization header
+    # or any of its handshake artifacts, on either a rejected or a successful
+    # write. Complements the api_key sentinel test above.
+    st = _setup()
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+    assert st.client.calls == [("mode", "10000001", 1)]
+    for line in Domoticz._log:
+        for artifact in _DIGEST_ARTIFACTS:
+            assert artifact not in line
+
+
+def test_oncommand_rejected_write_never_leaks_authorization_or_digest_artifacts():
+    st = plugin._state
+    st.config = Config("10000001", "k", "English", 20, 6, 25.0, 0, allow_control=True)
+
+    class _RejectingClient:
+        def __init__(self):
+            self.calls = []
+            self.base_url = "https://s18.myenergi.net"
+
+        def set_zappi_mode(self, serial, mode):
+            self.calls.append(("mode", serial, mode))
+            return {"status": 1, "error": "denied"}
+
+        def fetch_status(self, timeout=15):
+            return {"zappi": []}
+
+    st.client = _RejectingClient()
+    st.zappi_serial = "10000001"
+
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+
+    assert st.client.calls == [("mode", "10000001", 1)]
+    for line in Domoticz._log:
+        for artifact in _DIGEST_ARTIFACTS:
+            assert artifact not in line
+
+
 def test_oncommand_storm_coalescing_marks_timestamp_even_on_dispatch_failure():
     st = _setup()
 

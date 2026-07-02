@@ -82,3 +82,23 @@ def test_onstart_passes_gates_to_client(monkeypatch):
     plugin.onStart()
     assert captured["writes"] is True
     assert captured["lock"] is False
+
+
+def test_onstart_discovery_failure_sets_discovery_failing(monkeypatch):
+    """A discovery failure during onStart must mark discovery_failing so a later
+    heartbeat self-heal logs the matching 'recovered' transition."""
+
+    class _FailingClient:
+        def __init__(self, serial, api_key, **kw):
+            pass
+
+        def discover_from_director(self):
+            raise ConnectionError("network unreachable")
+
+    monkeypatch.setattr(plugin, "MyEnergiClient", _FailingClient)
+    plugin.Parameters = {
+        "Username": "20000002",
+        "ApiKey": "k",
+    }
+    plugin.onStart()
+    assert plugin._state.discovery_failing is True

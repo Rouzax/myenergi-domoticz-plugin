@@ -47,6 +47,18 @@ def test_mode_absent_field_not_reconciled():
     assert UNIT_MODE not in updates
 
 
+def test_mode_bool_zmo_not_reconciled():
+    status = _status(zappi={"zmo": True})  # bool is an int subclass; must not match
+    updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
+    assert UNIT_MODE not in updates
+
+
+def test_min_green_bool_mgl_not_reconciled():
+    status = _status(zappi={"zmo": 1, "mgl": True})  # bool is an int subclass; must not match
+    updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
+    assert UNIT_MIN_GREEN not in updates
+
+
 def test_lock_state_emitted_when_lock_on():
     status = _status(zappi={"zmo": 1}, lck=1)
     updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_lock=True))}
