@@ -33,3 +33,8 @@ def test_parse_rejects_garbage_numbers():
     cfg = parse_config({"LivePoll": "abc", "CounterEvery": "", "MaxSystemKW": "x"})
     assert cfg.live_interval == 20 and cfg.counter_multiple == 6
     assert cfg.max_system_kw == 25.0
+
+
+def test_parse_harvi_names_field():
+    cfg = parse_config({"Username": "1", "HarviNames": "21460322=SolarEdge"})
+    assert cfg.harvi_names == {"21460322": "SolarEdge"}

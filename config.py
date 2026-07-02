@@ -1,7 +1,8 @@
 """Pure parsing of the Domoticz Parameters dict into a typed Config."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from model import parse_harvi_names
 from translations import LANGUAGES
 
 
@@ -14,6 +15,7 @@ class Config:
     counter_multiple: int
     max_system_kw: float
     debug_level: int
+    harvi_names: "dict[str, str]" = field(default_factory=dict)
 
 
 def _int(params, key, default, lo, hi):
@@ -44,4 +46,5 @@ def parse_config(params: dict) -> Config:
         counter_multiple=_int(params, "CounterEvery", 6, 1, 60),
         max_system_kw=_float(params, "MaxSystemKW", 25.0),
         debug_level=_int(params, "DebugLevel", 0, 0, 2),
+        harvi_names=parse_harvi_names(str(params.get("HarviNames", ""))),
     )

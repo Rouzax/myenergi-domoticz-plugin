@@ -20,6 +20,21 @@ def deci_volts_to_v(v: int) -> float:
     return round(v / 10.0, 1)
 
 
+def parse_harvi_names(text: str, max_lines: int = 32) -> "dict[str, str]":
+    out: "dict[str, str]" = {}
+    raw = (text or "").replace(";", "\n")
+    lines = [ln.strip() for ln in raw.splitlines() if ln.strip()][:max_lines]
+    for ln in lines:
+        if "=" not in ln:
+            continue
+        serial_part, name_part = ln.split("=", 1)
+        serial = clean_serial(serial_part)
+        name = clean_label(name_part.strip())
+        if serial and name:
+            out[serial] = name
+    return out
+
+
 ROLE_BY_CTT = {
     "Generation": "solar",
     "Grid": "grid",
