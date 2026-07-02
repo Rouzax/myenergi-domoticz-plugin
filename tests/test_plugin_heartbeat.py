@@ -1,7 +1,10 @@
 import json
+import time
+import urllib.error
 
 import Domoticz
 
+import control
 import plugin
 from config import Config
 from domoticz_api import device_id
@@ -49,9 +52,19 @@ class _FakeClient:
         return {"U": [{"yr": 2026, "mon": 7, "dom": 1, "gep": 3_600_000}]}
 
 
-def _setup(counter_every=1, last_date="2026-07-01"):
+def _setup(counter_every=1, last_date="2026-07-01", allow_control=False, allow_lock=False):
     plugin._state = plugin._PluginState()
-    plugin._state.config = Config("20000002", "k", "English", 20, 6, 25.0, 0)
+    plugin._state.config = Config(
+        "20000002",
+        "k",
+        "English",
+        20,
+        6,
+        25.0,
+        0,
+        allow_control=allow_control,
+        allow_lock=allow_lock,
+    )
     plugin._state.client = _FakeClient()
     plugin._state.counter_every = counter_every
     import domoticz_api
@@ -60,6 +73,7 @@ def _setup(counter_every=1, last_date="2026-07-01"):
     domoticz_api.save_state(
         PluginState(base_wh={"1": 0.0, "2": 0.0, "3": 0.0}, last_processed_date=last_date)
     )
+    return plugin._state
 
 
 def test_refresh_beat_creates_devices_and_counter():
@@ -165,3 +179,126 @@ def test_verbose_logging_emits_status_and_timing():
         line.startswith("fetch_status duration_ms=") and "outcome=success" in line for line in log
     )
     assert any(line.startswith("apply units=") for line in log)
+
+
+def test_heartbeat_caches_validated_serial_and_hides_mode_text_once():
+    st = _setup(counter_every=1, allow_control=True)
+    plugin.onHeartbeat()
+    assert st.zappi_serial == "20000002"
+    did = device_id(0)
+    # Mode Text (unit 4) is hidden once Charge Mode (unit 12) takes over.
+    assert Domoticz.Devices[did].Units[4].Used == 0
+    assert st.mode_text_hidden is True
+
+
+def test_heartbeat_no_control_updates_when_gate_off():
+    _setup(counter_every=1, allow_control=False)
+    plugin.onHeartbeat()
+    did = device_id(0)
+    assert 12 not in Domoticz.Devices[did].Units  # no Charge Mode device created
+    assert Domoticz.Devices[did].Units[4].Used == 1  # Mode Text stays visible
+    assert plugin._state.mode_text_hidden is False
+
+
+def test_reconcile_suppression_skips_units_with_future_deadline():
+    class _ModeClient(_FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.zmo = 1
+
+        def fetch_status(self):
+            payload = super().fetch_status()
+            payload[0]["zappi"][0]["zmo"] = self.zmo
+            return payload
+
+    _setup(counter_every=1, allow_control=True)
+    client = _ModeClient()
+    plugin._state.client = client
+    plugin.onHeartbeat()  # beat 1: creates unit 12, zmo=1 -> level 0
+    did = device_id(0)
+    assert Domoticz.Devices[did].Units[12].nValue == 0
+
+    client.zmo = 2  # hub reports Eco (level 10) while we suppress reconcile
+    plugin._state.reconcile_suppress[control.UNIT_MODE] = time.monotonic() + 1000
+    plugin.onHeartbeat()
+    assert Domoticz.Devices[did].Units[12].nValue == 0  # suppressed -> unchanged
+
+    plugin._state.reconcile_suppress[control.UNIT_MODE] = time.monotonic() - 1
+    plugin.onHeartbeat()
+    assert Domoticz.Devices[did].Units[12].nValue == 10  # deadline passed -> reconciled
+
+
+class _DiscoveryClient(_FakeClient):
+    def __init__(self, outcomes):
+        super().__init__()
+        self.base_url = None
+        self._outcomes = list(outcomes)
+        self.discover_calls = 0
+
+    def discover_from_director(self):
+        self.discover_calls += 1
+        outcome = self._outcomes.pop(0)
+        if outcome is not None:
+            raise outcome
+        self.base_url = "https://s18.myenergi.net"
+
+
+def test_discovery_transient_failure_backs_off_and_does_not_retry_every_beat():
+    _setup(counter_every=1)
+    client = _DiscoveryClient([OSError("dns failure"), OSError("dns failure")])
+    plugin._state.client = client
+
+    plugin.onHeartbeat()
+    assert client.discover_calls == 1
+    assert plugin._state.discovery_failing is True
+    assert plugin._state.discovery_backoff_ts > time.monotonic()
+    log_len = len(Domoticz._log)
+
+    plugin.onHeartbeat()  # still within the backoff window -> no retry, no duplicate log
+    assert client.discover_calls == 1
+    assert len(Domoticz._log) == log_len
+
+
+def test_discovery_backoff_grows_on_repeated_transient_failures():
+    _setup(counter_every=1)
+    client = _DiscoveryClient([OSError("dns failure"), OSError("dns failure")])
+    plugin._state.client = client
+
+    plugin.onHeartbeat()
+    first_backoff = plugin._state.discovery_backoff_seconds
+    plugin._state.discovery_backoff_ts = 0.0  # force the next beat to retry immediately
+    plugin.onHeartbeat()
+    assert client.discover_calls == 2
+    assert plugin._state.discovery_backoff_seconds > first_backoff
+
+
+def test_discovery_401_is_permanent_and_logs_once():
+    _setup(counter_every=1)
+    err = urllib.error.HTTPError("https://director.myenergi.net", 401, "unauthorized", None, None)
+    client = _DiscoveryClient([err, err, err])
+    plugin._state.client = client
+
+    plugin.onHeartbeat()
+    plugin.onHeartbeat()
+    plugin.onHeartbeat()
+
+    assert client.discover_calls == 1  # long backoff blocks retries for the rest of the test
+    assert plugin._state.discovery_backoff_seconds == 900.0
+    # log_redacted replaces every occurrence of the (single-char, "k") test secret, so
+    # match on a fragment that survives redaction rather than the literal wording.
+    assert sum("401" in line and "Unauthorized" in line for line in Domoticz._log) == 1
+
+
+def test_discovery_recovers_and_clears_backoff():
+    _setup(counter_every=1)
+    client = _DiscoveryClient([OSError("dns failure"), None])
+    plugin._state.client = client
+
+    plugin.onHeartbeat()  # fails, backoff scheduled
+    assert plugin._state.discovery_failing is True
+    plugin._state.discovery_backoff_ts = 0.0  # force the retry now instead of waiting
+
+    plugin.onHeartbeat()  # succeeds
+    assert plugin._state.discovery_failing is False
+    assert plugin._state.discovery_backoff_ts == 0.0
+    assert any("recovered" in line for line in Domoticz._log)

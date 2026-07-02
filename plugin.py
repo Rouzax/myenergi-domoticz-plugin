@@ -74,6 +74,7 @@
 """
 
 import time
+import urllib.error
 from dataclasses import dataclass, field, replace
 
 import DomoticzEx as Domoticz
@@ -89,6 +90,8 @@ from planner import AGG_UNITS, advance_baselines, assign_harvi_units, plan, plan
 
 _MAX_BACKFILL_DAYS = 14
 _CONFIRM_TIMEOUT = 5
+_DISCOVERY_BACKOFF_INITIAL = 20.0
+_DISCOVERY_BACKOFF_CAP = 900.0
 
 # Debug Level -> Domoticz.Debugging() bitmask. 2 = Python-only (this plugin's own
 # Domoticz.Debug lines); 1 = All (adds framework internals). 0 = off.
@@ -132,6 +135,8 @@ class _PluginState:
     last_write: dict = field(default_factory=dict)
     last_any_write_ts: float = 0.0
     discovery_backoff_ts: float = 0.0
+    discovery_backoff_seconds: float = 0.0
+    discovery_failing: bool = False
     mode_text_hidden: bool = False
     reconcile_suppress: dict = field(default_factory=dict)
 
@@ -178,6 +183,59 @@ def onStop():
     _state.client = None
 
 
+def _note_transient_discovery_failure(st, now, exc) -> None:
+    if not st.discovery_failing:
+        domoticz_api.log_redacted(
+            Domoticz.Error, f"myenergi discovery failed: {exc}", st.config.api_key
+        )
+    st.discovery_failing = True
+    prev = st.discovery_backoff_seconds
+    next_backoff = (
+        _DISCOVERY_BACKOFF_INITIAL if prev <= 0 else min(prev * 2, _DISCOVERY_BACKOFF_CAP)
+    )
+    st.discovery_backoff_seconds = next_backoff
+    st.discovery_backoff_ts = now + next_backoff
+
+
+def _maybe_rediscover(st) -> None:
+    now = time.monotonic()
+    if now < st.discovery_backoff_ts:
+        return
+    try:
+        st.client.discover_from_director()
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            if not st.discovery_failing:
+                domoticz_api.log_redacted(
+                    Domoticz.Error,
+                    f"myenergi discovery failed (401 Unauthorized, check API key): {exc}",
+                    st.config.api_key,
+                )
+            st.discovery_failing = True
+            st.discovery_backoff_seconds = _DISCOVERY_BACKOFF_CAP
+            st.discovery_backoff_ts = now + _DISCOVERY_BACKOFF_CAP
+            return
+        _note_transient_discovery_failure(st, now, exc)
+    except Exception as exc:  # noqa: BLE001 - discovery must never crash the heartbeat
+        _note_transient_discovery_failure(st, now, exc)
+    else:
+        if st.discovery_failing:
+            Domoticz.Log(f"myenergi discovery recovered: base={st.client.base_url}")
+        st.discovery_failing = False
+        st.discovery_backoff_seconds = 0.0
+        st.discovery_backoff_ts = 0.0
+
+
+def _persist_state(st):
+    saved = domoticz_api.load_state()
+    return replace(
+        saved,
+        auto_names=st.auto_names,
+        unit_alloc=st.unit_alloc,
+        mode_text_hidden=st.mode_text_hidden,
+    )
+
+
 def onHeartbeat():
     st = _state
     if st.client is None or st.config is None:
@@ -186,6 +244,10 @@ def onHeartbeat():
     if devices is None:
         return
     try:
+        if st.client.base_url is None:
+            _maybe_rediscover(st)
+            if st.client.base_url is None:
+                return
         st.beat += 1
         did = domoticz_api.device_id(_hardware_id())
         t0 = time.monotonic()
@@ -196,6 +258,9 @@ def onHeartbeat():
         if not status.zappi:
             Domoticz.Debug("skip reason=no_zappi")
             return
+        zappi_dev = next((d for d in status.devices if d.kind == "zappi"), None)
+        if zappi_dev is not None:
+            st.zappi_serial = zappi_dev.serial
         harvis = [d for d in status.devices if d.kind == "harvi"]
         Domoticz.Debug(
             f"status zappi={status.zappi.get('sno')} gen={status.zappi.get('gen')} "
@@ -237,10 +302,19 @@ def onHeartbeat():
             updates = updates + plan_harvi_updates(
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
+            updates = updates + control.plan_control_updates(
+                status, st.config, _existing_units(devices, did)
+            )
+            now = time.monotonic()
+            updates = [u for u in updates if st.reconcile_suppress.get(u.unit, 0) <= now]
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
             Domoticz.Debug(f"apply units={len(updates)}")
             state = replace(state, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
             domoticz_api.save_state(state)
+            if st.config.allow_control and not st.mode_text_hidden:
+                domoticz_api.deactivate_units(devices, did, [4])
+                st.mode_text_hidden = True
+                domoticz_api.save_state(_persist_state(st))
         else:
             # Live beat (or refresh with no hub date): update power/status only.
             # No load_state (base_wh is unused when today_sums is None).
@@ -252,10 +326,7 @@ def onHeartbeat():
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
             Domoticz.Debug(f"apply units={len(updates)}")
             if st.auto_names != before_names or alloc_changed:
-                saved = domoticz_api.load_state()
-                domoticz_api.save_state(
-                    replace(saved, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
-                )
+                domoticz_api.save_state(_persist_state(st))
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
