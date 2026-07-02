@@ -17,7 +17,6 @@ class Config:
     debug_level: int
     harvi_names: "dict[str, str]" = field(default_factory=dict)
     allow_control: bool = False
-    allow_lock: bool = False
 
 
 def _int(params, key, default, lo, hi):
@@ -54,5 +53,4 @@ def parse_config(params: dict) -> Config:
         debug_level=_int(params, "DebugLevel", 0, 0, 2),
         harvi_names=harvi_names_from_slots(params),
         allow_control=_bool(params, "AllowControl"),
-        allow_lock=_bool(params, "AllowLock"),
     )

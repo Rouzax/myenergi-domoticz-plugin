@@ -12,7 +12,7 @@ from control import (
 from model import SystemStatus
 
 
-def _cfg(allow_control=False, allow_lock=False):
+def _cfg(allow_control=False):
     return Config(
         "10000001",
         "k",
@@ -22,7 +22,6 @@ def _cfg(allow_control=False, allow_lock=False):
         25.0,
         0,
         allow_control=allow_control,
-        allow_lock=allow_lock,
     )
 
 
@@ -59,9 +58,9 @@ def test_min_green_bool_mgl_not_reconciled():
     assert UNIT_MIN_GREEN not in updates
 
 
-def test_lock_state_emitted_when_lock_on():
+def test_lock_state_emitted_when_control_on():
     status = _status(zappi={"zmo": 1}, lck=1)
-    updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_lock=True))}
+    updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
     assert UNIT_LOCK_STATE in updates
     assert "Locked Now" in updates[UNIT_LOCK_STATE].svalue
 

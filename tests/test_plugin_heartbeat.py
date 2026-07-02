@@ -52,7 +52,7 @@ class _FakeClient:
         return {"U": [{"yr": 2026, "mon": 7, "dom": 1, "gep": 3_600_000}]}
 
 
-def _setup(counter_every=1, last_date="2026-07-01", allow_control=False, allow_lock=False):
+def _setup(counter_every=1, last_date="2026-07-01", allow_control=False):
     plugin._state = plugin._PluginState()
     plugin._state.config = Config(
         "20000002",
@@ -63,7 +63,6 @@ def _setup(counter_every=1, last_date="2026-07-01", allow_control=False, allow_l
         25.0,
         0,
         allow_control=allow_control,
-        allow_lock=allow_lock,
     )
     plugin._state.client = _FakeClient()
     plugin._state.counter_every = counter_every

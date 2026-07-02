@@ -267,7 +267,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                     svalue=str(mgl),
                 )
             )
-    if config.allow_lock and status.zappi_lck is not None:
+    if config.allow_control and status.zappi_lck is not None:
         updates.append(
             DeviceUpdate(
                 unit=UNIT_LOCK_STATE,

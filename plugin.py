@@ -13,6 +13,13 @@
         <param field="ApiKey" label="API Key" width="200px" required="true" password="true">
             <description>API key generated in the myenergi app (Account, Advanced, API Key). Grants full control of your charger and is stored in cleartext in the Domoticz database, so treat DB backups as secrets and rotate the key if it is ever exposed.</description>
         </param>
+        <param field="AllowControl" label="Allow Control" width="150px">
+            <description>Enable charger control (mode changes, boost, min-green). Off by default: the plugin stays strictly read-only until this is turned on. Once enabled, any Domoticz user, scene, timer, or API client with access to this hardware can command the charger.</description>
+            <options>
+                <option label="No" value="false" default="true"/>
+                <option label="Yes" value="true"/>
+            </options>
+        </param>
         <param field="Language" label="Language" width="150px">
             <description>Language for device names and status text (English or Nederlands). The settings page itself is always English.</description>
             <options>
@@ -38,22 +45,6 @@
                     <option label="None" value="0" default="true"/>
                     <option label="Basic" value="1"/>
                     <option label="Verbose" value="2"/>
-                </options>
-            </param>
-        </group>
-        <group label="Control (opt-in)">
-            <param field="AllowControl" label="Allow Control" width="150px">
-                <description>Enable charger control (mode changes, boost, min-green). Off by default: the plugin stays strictly read-only until this is turned on. Once enabled, any Domoticz user, scene, timer, or API client with access to this hardware can command the charger.</description>
-                <options>
-                    <option label="No" value="false" default="true"/>
-                    <option label="Yes" value="true"/>
-                </options>
-            </param>
-            <param field="AllowLock" label="Allow Lock" width="150px">
-                <description>Enable the read-only Charger Lock State display. Off by default; independent of Allow Control. This does not grant any control; the charger lock cannot be changed from Domoticz.</description>
-                <options>
-                    <option label="No" value="false" default="true"/>
-                    <option label="Yes" value="true"/>
                 </options>
             </param>
         </group>

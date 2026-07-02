@@ -29,7 +29,6 @@ def test_bool_parse_is_fail_closed(value, expected):
 def test_control_gates_default_off_when_absent():
     cfg = parse_config({"Username": "10000001", "ApiKey": "k"})
     assert cfg.allow_control is False
-    assert cfg.allow_lock is False
 
 
 def test_parse_defaults_and_clamps():
