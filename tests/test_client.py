@@ -165,14 +165,13 @@ class _RecordingOpener:
         return _FakeResponse(b'{"status":0}', {})
 
 
-def _write_client(writes=True, lock=True):
+def _write_client(writes=True):
     rec = _RecordingOpener()
     c = MyEnergiClient(
         "10000001",
         "k",
         opener_factory=lambda: rec,
         writes_enabled=writes,
-        lock_enabled=lock,
     )
     c._asn = "s18.myenergi.net"
     return c, rec
@@ -189,11 +188,6 @@ class TestWriteMethods:
         c, _ = _write_client(writes=False)
         with pytest.raises(WriteError):
             c.set_zappi_mode("10000001", 1)
-
-    def test_lock_blocked_when_lock_gate_off(self):
-        c, _ = _write_client(lock=False)
-        with pytest.raises(WriteError):
-            c.set_lock("10000001", "01000000")
 
     def test_non_digit_serial_refused(self):
         c, _ = _write_client()
@@ -231,23 +225,6 @@ class TestWriteMethods:
         c, rec = _write_client()
         c.set_min_green("10000001", 50)
         assert rec.url == "https://s18.myenergi.net/cgi-set-min-green-Z10000001-50"
-
-    def test_lock_url(self):
-        c, rec = _write_client()
-        c.set_lock("10000001", "01000000")
-        assert rec.url == "https://s18.myenergi.net/cgi-jlock-10000001-01000000"
-
-    def test_lock_rejects_path_injection(self):
-        c, rec = _write_client()
-        with pytest.raises(WriteError):
-            c.set_lock("10000001", "0100/000")
-        assert rec.url is None
-
-    def test_lock_rejects_wrong_length(self):
-        c, rec = _write_client()
-        with pytest.raises(WriteError):
-            c.set_lock("10000001", "012")
-        assert rec.url is None
 
     def test_write_requires_base_url(self):
         c, _ = _write_client()

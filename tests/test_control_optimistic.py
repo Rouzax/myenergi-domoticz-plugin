@@ -1,4 +1,4 @@
-from control import UNIT_LOCK, UNIT_MIN_GREEN, UNIT_MODE, optimistic_update
+from control import UNIT_MIN_GREEN, UNIT_MODE, optimistic_update
 
 
 def test_mode_level_optimistic_update():
@@ -14,12 +14,6 @@ def test_min_green_optimistic_update():
     assert update.unit == 16
     assert update.svalue == "60"
     assert update.type_name == "Setpoint"
-
-
-def test_lock_on_optimistic_update():
-    update = optimistic_update(UNIT_LOCK, "On", 0, "English")
-    assert update.unit == 17
-    assert update.nvalue == 1
 
 
 def test_mode_bad_level_returns_none():

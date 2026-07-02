@@ -4,7 +4,6 @@ from control import (
     UNIT_BOOST,
     UNIT_BOOST_KWH,
     UNIT_BOOST_TIME,
-    UNIT_LOCK,
     UNIT_MIN_GREEN,
     UNIT_MODE,
     decide_write,
@@ -57,11 +56,6 @@ def test_min_green_setpoint_clamps():
     intent = decide_write(UNIT_MIN_GREEN, "Set Level", 60.0, {})
     assert intent.kind == "min_green"
     assert intent.pct == 60
-
-
-def test_lock_on_off():
-    assert decide_write(UNIT_LOCK, "On", 0, {}).locked is True
-    assert decide_write(UNIT_LOCK, "Off", 0, {}).locked is False
 
 
 def test_unknown_unit_is_none():

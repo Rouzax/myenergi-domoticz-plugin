@@ -50,7 +50,7 @@
                 </options>
             </param>
             <param field="AllowLock" label="Allow Lock" width="150px">
-                <description>Enable charger lock/unlock control. Off by default; independent of Allow Control.</description>
+                <description>Enable the read-only Charger Lock State display. Off by default; independent of Allow Control. This does not grant any control; the charger lock cannot be changed from Domoticz.</description>
                 <options>
                     <option label="No" value="false" default="true"/>
                     <option label="Yes" value="true"/>
@@ -171,7 +171,6 @@ def onStart():
             cfg.hub_serial,
             cfg.api_key,
             writes_enabled=cfg.allow_control,
-            lock_enabled=cfg.allow_lock,
         )
         _state.client.discover_from_director()
         Domoticz.Debug(f"discovery ok: base={_state.client.base_url}")
@@ -356,8 +355,6 @@ def _dispatch_write(client, serial, intent):
         return client.cancel_boost(serial)
     if intent.kind == "min_green":
         return client.set_min_green(serial, intent.pct)
-    if intent.kind == "lock":
-        return client.set_lock(serial, control.lock_bitmask(intent.locked))
     return None
 
 
@@ -378,8 +375,7 @@ def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
     if st.client is None or st.config is None or devices is None:
         return
     try:
-        gate_ok = st.config.allow_lock if Unit == control.UNIT_LOCK else st.config.allow_control
-        if not gate_ok:
+        if not st.config.allow_control:
             return
         did = domoticz_api.device_id(_hardware_id())
         siblings = _read_siblings(devices, did, [control.UNIT_BOOST_KWH, control.UNIT_BOOST_TIME])

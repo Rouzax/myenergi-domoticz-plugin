@@ -34,7 +34,6 @@ _CONTROL_NAMES = {
     "boost_kwh": {"English": "Boost kWh", "Nederlands": "Boost kWh"},
     "boost_time": {"English": "Boost Complete By", "Nederlands": "Boost Klaar Om"},
     "min_green": {"English": "Min Green Level", "Nederlands": "Min Groen Niveau"},
-    "lock": {"English": "Charger Lock", "Nederlands": "Lader Vergrendeling"},
     "lock_state": {"English": "Charger Lock State", "Nederlands": "Lader Vergrendelstatus"},
 }
 _ZMO = {

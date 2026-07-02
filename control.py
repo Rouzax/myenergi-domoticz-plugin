@@ -15,7 +15,6 @@ UNIT_BOOST = 13
 UNIT_BOOST_KWH = 14
 UNIT_BOOST_TIME = 15
 UNIT_MIN_GREEN = 16
-UNIT_LOCK = 17
 UNIT_LOCK_STATE = 18
 
 MODE_LEVELS = {0: 1, 10: 2, 20: 3, 30: 4}
@@ -73,16 +72,6 @@ def decode_lck(lck: int) -> str:
     return f"{lck} ({', '.join(flags) if flags else 'none'})"
 
 
-# Provisional bitmasks for the zappi lock write endpoint, pending live-hardware
-# verification (Task 16) before the lock write device is enabled.
-LOCK_BITMASK_LOCK = "10000000"
-LOCK_BITMASK_UNLOCK = "01000000"
-
-
-def lock_bitmask(locked: bool) -> str:
-    return LOCK_BITMASK_LOCK if locked else LOCK_BITMASK_UNLOCK
-
-
 @dataclass
 class WriteIntent:
     kind: str
@@ -90,7 +79,6 @@ class WriteIntent:
     kwh: "int | None" = None
     hhmm: "str | None" = None
     pct: "int | None" = None
-    locked: "bool | None" = None
 
 
 def _sibling_float(siblings, unit):
@@ -124,12 +112,6 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
     if unit == UNIT_MIN_GREEN:
         pct = clamp_min_green(level) if command == "Set Level" else None
         return WriteIntent("min_green", pct=pct) if pct is not None else None
-    if unit == UNIT_LOCK:
-        if command == "On":
-            return WriteIntent("lock", locked=True)
-        if command == "Off":
-            return WriteIntent("lock", locked=False)
-        return None
     return None
 
 
@@ -210,22 +192,6 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
             name=control_device_name("min_green", language),
             nvalue=0,
             svalue=str(pct),
-        )
-    if unit == UNIT_LOCK:
-        if command == "On":
-            locked = 1
-        elif command == "Off":
-            locked = 0
-        else:
-            return None
-        return DeviceUpdate(
-            unit=UNIT_LOCK,
-            type_name="On/Off",
-            options={},
-            name=control_device_name("lock", language),
-            nvalue=locked,
-            svalue="",
-            switchtype=19,
         )
     return None
 

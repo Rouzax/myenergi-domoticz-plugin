@@ -57,13 +57,12 @@ def test_onstart_verbose_enables_debugging(monkeypatch):
 
 
 def test_onstart_passes_gates_to_client(monkeypatch):
-    """AllowControl/AllowLock params flow into the client's write gates."""
+    """AllowControl flows into the client's write gate."""
     captured = {}
 
     class _FakeClient:
-        def __init__(self, serial, api_key, writes_enabled=False, lock_enabled=False, **kw):
+        def __init__(self, serial, api_key, writes_enabled=False, **kw):
             captured["writes"] = writes_enabled
-            captured["lock"] = lock_enabled
 
         def discover_from_director(self):
             return "s18.myenergi.net"
@@ -77,11 +76,9 @@ def test_onstart_passes_gates_to_client(monkeypatch):
         "Username": "10000001",
         "ApiKey": "k",
         "AllowControl": "true",
-        "AllowLock": "false",
     }
     plugin.onStart()
     assert captured["writes"] is True
-    assert captured["lock"] is False
 
 
 def test_onstart_discovery_failure_sets_discovery_failing(monkeypatch):

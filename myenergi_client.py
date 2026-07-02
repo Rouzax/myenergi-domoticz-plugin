@@ -1,8 +1,8 @@
 """myenergi cloud transport: digest auth, ASN allowlist, host-scoped credentials.
 
 Read methods (`fetch_status`, `fetch_jday`, `discover_from_director`) are always
-available. Write methods (zappi mode, boost, min-green, lock) are gated off by
-default and only run when `writes_enabled` / `lock_enabled` is explicitly set.
+available. Write methods (zappi mode, boost, min-green) are gated off by
+default and only run when `writes_enabled` is explicitly set.
 Never logs the API key or Authorization header; never enables transport
 debuglevel; HTTPS + verified TLS only (stdlib default context).
 """
@@ -31,7 +31,6 @@ class MyEnergiClient:
         opener_factory=None,
         max_bytes=1_048_576,
         writes_enabled=False,
-        lock_enabled=False,
         control_timeout=5,
         discovery_timeout=10,
     ):
@@ -40,7 +39,6 @@ class MyEnergiClient:
         self._max_bytes = max_bytes
         self._asn = None
         self._writes_enabled = writes_enabled
-        self._lock_enabled = lock_enabled
         self._control_timeout = control_timeout
         self._discovery_timeout = discovery_timeout
         # Digest credentials scoped to *.myenergi.net so urllib will not emit
@@ -136,9 +134,3 @@ class MyEnergiClient:
     def set_min_green(self, serial, pct):
         path = f"/cgi-set-min-green-Z{serial}-{int(pct)}"
         return self._control_get(serial, path, self._writes_enabled)
-
-    def set_lock(self, serial, bitmask):
-        if not (isinstance(bitmask, str) and len(bitmask) == 8 and set(bitmask) <= {"0", "1"}):
-            raise WriteError("invalid bitmask")
-        path = f"/cgi-jlock-{serial}-{bitmask}"
-        return self._control_get(serial, path, self._lock_enabled)
