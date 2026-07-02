@@ -1,10 +1,11 @@
 """Pure planning: aggregate energy, advance baselines, and build device updates."""
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 
-from energy import seed_base_wh
-from model import joules_to_wh
+import translations
+from energy import clamp_counter, seed_base_wh
+from model import centi_hz_to_hz, deci_volts_to_v, joules_to_wh
 from persistence import PluginState
 
 _EV_FIELDS = ("h1d", "h2d", "h3d", "h1b", "h2b", "h3b")
@@ -53,3 +54,110 @@ def advance_baselines(
     # never folded here; it is added live in plan(). Using hub_date would drop today
     # from base at the next midnight and freeze the monotonic counter.
     return replace(state, base_wh=base, last_processed_date=_prev_date(hub_date))
+
+
+UNIT_SOLAR = 1
+UNIT_HOME = 2
+UNIT_EV = 3
+UNIT_MODE = 4
+UNIT_CHARGE_STATUS = 5
+UNIT_PLUG = 6
+UNIT_CHARGE_ADDED = 7
+UNIT_VOLTAGE = 8
+UNIT_FREQUENCY = 9
+AGG_UNITS = {"solar": UNIT_SOLAR, "home": UNIT_HOME, "ev": UNIT_EV}
+
+
+@dataclass
+class DeviceUpdate:
+    unit: int
+    type_name: str
+    options: dict
+    name: str
+    nvalue: int
+    svalue: str
+
+
+def _kwh(unit, key, power_w, energy_wh, lang):
+    return DeviceUpdate(
+        unit,
+        "kWh",
+        {"EnergyMeterMode": "0"},
+        translations.device_name(key, lang),
+        0,
+        f"{int(power_w)};{energy_wh:.4f}",
+    )
+
+
+def _text(unit, key, value, lang):
+    return DeviceUpdate(unit, "Text", {}, translations.device_name(key, lang), 0, value)
+
+
+def _int(v):
+    # Crash-safe coercion of an untrusted cloud field to int; 0 on anything odd.
+    try:
+        return int(float(str(v)))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _float(v):
+    try:
+        return float(str(v))
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def plan(status, today_sums, state, prev_counters, config, max_step_wh):
+    z = status.zappi
+    lang = config.language
+    gen, grd, div = _int(z.get("gen")), _int(z.get("grd")), _int(z.get("div"))
+    powers = {"solar": gen, "ev": div, "home": max(0, gen + grd - div)}
+
+    if today_sums is None:
+        energies = {n: prev_counters.get(u, 0.0) for n, u in AGG_UNITS.items()}
+        new_state = state
+    else:
+        today = aggregate_today_wh(today_sums)
+        energies = {}
+        for name, unit in AGG_UNITS.items():
+            candidate = state.base_wh.get(str(unit), 0.0) + today[name]
+            prev = prev_counters.get(unit, 0.0)
+            energies[name], _warn = clamp_counter(prev, candidate, max_step_wh)
+        new_state = state
+
+    mode_text = translations.zappi_mode(_int(z.get("zmo")), lang)
+    status_text = translations.charge_status(_int(z.get("sta")), lang)
+    plug_text = translations.plug_status(str(z.get("pst", "")), lang)
+    charge_name = translations.device_name("charge_added", lang)
+    voltage_name = translations.device_name("voltage", lang)
+    frequency_name = translations.device_name("frequency", lang)
+
+    updates = [
+        _kwh(UNIT_SOLAR, "solar_total", powers["solar"], energies["solar"], lang),
+        _kwh(UNIT_HOME, "home", powers["home"], energies["home"], lang),
+        _kwh(UNIT_EV, "ev", powers["ev"], energies["ev"], lang),
+        _text(UNIT_MODE, "zappi_mode", mode_text, lang),
+        _text(UNIT_CHARGE_STATUS, "charge_status", status_text, lang),
+        _text(UNIT_PLUG, "plug_status", plug_text, lang),
+        DeviceUpdate(
+            UNIT_CHARGE_ADDED,
+            "Custom",
+            {"Custom": "1;kWh"},
+            charge_name,
+            0,
+            f"{_float(z.get('che')):.2f}",
+        ),
+        DeviceUpdate(
+            UNIT_VOLTAGE, "Voltage", {}, voltage_name, 0, f"{deci_volts_to_v(_int(z.get('vol')))}"
+        ),
+        DeviceUpdate(
+            UNIT_FREQUENCY,
+            "Custom",
+            {"Custom": "1;Hz"},
+            frequency_name,
+            0,
+            f"{centi_hz_to_hz(_int(z.get('frq')))}",
+        ),
+    ]
+    return updates, new_state
