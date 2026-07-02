@@ -1,4 +1,16 @@
-from planner import aggregate_today_wh
+from planner import AGG_UNITS, UNIT_GRID_EXPORT, UNIT_GRID_IMPORT, aggregate_today_wh
+
+
+def test_aggregate_includes_grid_import_export():
+    # imp/exp are whole-day energy in Joules; 3_600_000 J = 1000 Wh
+    agg = aggregate_today_wh({"gep": 0, "imp": 3_600_000, "exp": 7_200_000})
+    assert agg["grid_import"] == 1000.0
+    assert agg["grid_export"] == 2000.0
+
+
+def test_grid_units_registered_in_agg_units():
+    assert AGG_UNITS["grid_import"] == UNIT_GRID_IMPORT == 10
+    assert AGG_UNITS["grid_export"] == UNIT_GRID_EXPORT == 11
 
 
 def test_aggregate_today_wh():

@@ -5,6 +5,8 @@ def test_device_name_en_nl_and_fallback():
     assert device_name("solar_total", "English") == "Solar Total"
     assert device_name("solar_total", "Nederlands") == "Zonne-opbrengst totaal"
     assert device_name("ev", "Klingon") == "EV Charging"  # unknown lang -> English
+    assert device_name("grid_import", "English") == "Grid Import"
+    assert device_name("grid_export", "Nederlands") == "Netinvoer"
 
 
 def test_status_value_maps():

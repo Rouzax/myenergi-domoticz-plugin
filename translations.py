@@ -9,6 +9,8 @@ _NAMES = {
     "solar_total": {"English": "Solar Total", "Nederlands": "Zonne-opbrengst totaal"},
     "home": {"English": "Home Consumption", "Nederlands": "Huisverbruik"},
     "ev": {"English": "EV Charging", "Nederlands": "EV laden"},
+    "grid_import": {"English": "Grid Import", "Nederlands": "Netafname"},
+    "grid_export": {"English": "Grid Export", "Nederlands": "Netinvoer"},
     "zappi_mode": {"English": "Zappi Mode", "Nederlands": "Zappi modus"},
     "charge_status": {"English": "Charge Status", "Nederlands": "Laadstatus"},
     "plug_status": {"English": "Plug Status", "Nederlands": "Stekkerstatus"},

@@ -22,6 +22,8 @@ def aggregate_today_wh(day_sums: dict) -> dict:
         "solar": joules_to_wh(gep),
         "ev": joules_to_wh(ev_j),
         "home": joules_to_wh(home_j),
+        "grid_import": joules_to_wh(imp),
+        "grid_export": joules_to_wh(exp),
     }
 
 
@@ -65,7 +67,15 @@ UNIT_PLUG = 6
 UNIT_CHARGE_ADDED = 7
 UNIT_VOLTAGE = 8
 UNIT_FREQUENCY = 9
-AGG_UNITS = {"solar": UNIT_SOLAR, "home": UNIT_HOME, "ev": UNIT_EV}
+UNIT_GRID_IMPORT = 10
+UNIT_GRID_EXPORT = 11
+AGG_UNITS = {
+    "solar": UNIT_SOLAR,
+    "home": UNIT_HOME,
+    "ev": UNIT_EV,
+    "grid_import": UNIT_GRID_IMPORT,
+    "grid_export": UNIT_GRID_EXPORT,
+}
 
 
 @dataclass
