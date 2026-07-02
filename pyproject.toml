@@ -11,6 +11,8 @@ target-version = "py39"
 line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "SIM"]
+# plugin.py docstring is XML manifest with exact long lines per spec
+per-file-ignores = { "plugin.py" = ["E501"] }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
