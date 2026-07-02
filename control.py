@@ -118,3 +118,20 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
             return WriteIntent("lock", locked=False)
         return None
     return None
+
+
+def write_succeeded(kind: str, resp: dict) -> bool:
+    if not isinstance(resp, dict):
+        return False
+    if kind == "min_green":
+        return "mgl" in resp
+    return resp.get("status") == 0
+
+
+def should_debounce(unit, now, last_write, min_gap) -> bool:
+    prev = last_write.get(unit)
+    return prev is not None and (now - prev) < min_gap
+
+
+def allow_write_now(now, last_any_ts, min_gap) -> bool:
+    return (now - last_any_ts) >= min_gap
