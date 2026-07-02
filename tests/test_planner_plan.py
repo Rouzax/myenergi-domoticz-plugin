@@ -18,7 +18,7 @@ from planner import (
 
 _fixture_path = Path(__file__).parent / "fixtures" / "jstatus.json"
 STATUS = parse_jstatus(json.loads(_fixture_path.read_text()))
-CFG = Config("20000002", "k", "English", 20, 120, 25.0, 0)
+CFG = Config("20000002", "k", "English", 20, 6, 25.0, 0)
 
 
 def _by_unit(updates):
@@ -45,7 +45,7 @@ def test_live_beat_keeps_prior_energy():
 def test_live_beat_remaining_devices():
     # Covers the five units not asserted in test_live_beat_keeps_prior_energy:
     # Home (2), EV (3), Zappi Mode (4), Charge Status (5), Frequency (9).
-    # Fixture: gen=1215, grd=734, div=0, che=2.34, frq=5001, zmo=1, sta=4, pst="A"
+    # Fixture: gen=1215, grd=734, div=0, che=2.34, frq=49.96, zmo=1, sta=4, pst="A"
     state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: 5000.0}
     updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
@@ -63,13 +63,13 @@ def test_live_beat_remaining_devices():
     assert u[UNIT_MODE].type_name == "Text"
     assert u[UNIT_MODE].svalue == "Fast"
 
-    # Charge Status: sta=4 -> "Boosting"
+    # Charge Status: sta=4 but pst="A" (unplugged) -> "Idle" (not stale "Boosting")
     assert u[UNIT_CHARGE_STATUS].type_name == "Text"
-    assert u[UNIT_CHARGE_STATUS].svalue == "Boosting"
+    assert u[UNIT_CHARGE_STATUS].svalue == "Idle"
 
-    # Frequency: frq=5001 -> 50.01 Hz
+    # Frequency: jstatus frq is already Hz -> displayed as-is
     assert u[UNIT_FREQUENCY].type_name == "Custom"
-    assert u[UNIT_FREQUENCY].svalue == "50.01"
+    assert u[UNIT_FREQUENCY].svalue == "49.96"
 
 
 def test_refresh_beat_sets_counter_from_base_plus_today():

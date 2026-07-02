@@ -20,10 +20,6 @@ def deci_volts_to_v(v: int) -> float:
     return round(v / 10.0, 1)
 
 
-def centi_hz_to_hz(f: int) -> float:
-    return round(f / 100.0, 2)
-
-
 ROLE_BY_CTT = {
     "Generation": "solar",
     "Grid": "grid",

@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 import translations
 from energy import clamp_counter, seed_base_wh
-from model import centi_hz_to_hz, deci_volts_to_v, joules_to_wh
+from model import deci_volts_to_v, joules_to_wh
 from persistence import PluginState
 
 _EV_FIELDS = ("h1d", "h2d", "h3d", "h1b", "h2b", "h3b")
@@ -127,7 +127,7 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
         new_state = state
 
     mode_text = translations.zappi_mode(_int(z.get("zmo")), lang)
-    status_text = translations.charge_status(_int(z.get("sta")), lang)
+    status_text = translations.charge_status(_int(z.get("sta")), str(z.get("pst", "")), lang)
     plug_text = translations.plug_status(str(z.get("pst", "")), lang)
     charge_name = translations.device_name("charge_added", lang)
     voltage_name = translations.device_name("voltage", lang)
@@ -157,7 +157,7 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
             {"Custom": "1;Hz"},
             frequency_name,
             0,
-            f"{centi_hz_to_hz(_int(z.get('frq')))}",
+            f"{_float(z.get('frq')):.2f}",
         ),
     ]
     return updates, new_state

@@ -1,4 +1,4 @@
-from model import centi_hz_to_hz, deci_volts_to_v, joules_to_kwh, joules_to_wh
+from model import deci_volts_to_v, joules_to_kwh, joules_to_wh
 
 
 def test_joule_conversions():
@@ -9,4 +9,3 @@ def test_joule_conversions():
 
 def test_scalar_conversions():
     assert deci_volts_to_v(2343) == 234.3
-    assert centi_hz_to_hz(5001) == 50.01

@@ -28,6 +28,7 @@ _STA = {
     4: {"English": "Boosting", "Nederlands": "Boosten"},
     5: {"English": "Complete", "Nederlands": "Voltooid"},
 }
+_IDLE = {"English": "Idle", "Nederlands": "Inactief"}
 _PST = {
     "A": {"English": "Disconnected", "Nederlands": "Niet verbonden"},
     "B1": {"English": "Connected", "Nederlands": "Verbonden"},
@@ -53,7 +54,11 @@ def zappi_mode(zmo: int, lang: str) -> str:
     return _lookup(_ZMO, zmo, lang, "Unknown")
 
 
-def charge_status(sta: int, lang: str) -> str:
+def charge_status(sta: int, pst: str, lang: str) -> str:
+    # The zappi holds a stale sta (e.g. 4/Boosting) after the EV is unplugged, so
+    # gate on the plug status: pst "A" means EV disconnected -> report Idle.
+    if str(pst)[:1].upper() == "A":
+        return _IDLE.get(lang, _IDLE[_DEFAULT])
     return _lookup(_STA, sta, lang, "Unknown")
 
 
