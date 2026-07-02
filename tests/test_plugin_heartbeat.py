@@ -151,3 +151,14 @@ def test_heartbeat_creates_grid_and_harvi_devices():
     assert 11 in units  # Grid Export
     assert 20 in units  # first harvi power device
     assert units[20].sValue == "250"  # 100+100+50
+
+
+def test_verbose_logging_emits_status_and_timing():
+    _setup(counter_every=1)
+    plugin.onHeartbeat()
+    log = Domoticz._log
+    assert any(line.startswith("status zappi=") and "harvis=" in line for line in log)
+    assert any(
+        line.startswith("fetch_status duration_ms=") and "outcome=success" in line for line in log
+    )
+    assert any(line.startswith("apply units=") for line in log)

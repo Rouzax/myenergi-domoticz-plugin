@@ -48,6 +48,7 @@
 </plugin>
 """
 
+import time
 from dataclasses import dataclass, field, replace
 
 import DomoticzEx as Domoticz
@@ -148,10 +149,21 @@ def onHeartbeat():
     try:
         st.beat += 1
         did = domoticz_api.device_id(_hardware_id())
+        t0 = time.monotonic()
         status = parse_jstatus(st.client.fetch_status())
+        Domoticz.Debug(
+            f"fetch_status duration_ms={(time.monotonic() - t0) * 1000:.0f} outcome=success"
+        )
         if not status.zappi:
+            Domoticz.Debug("skip reason=no_zappi")
             return
         harvis = [d for d in status.devices if d.kind == "harvi"]
+        Domoticz.Debug(
+            f"status zappi={status.zappi.get('sno')} gen={status.zappi.get('gen')} "
+            f"grd={status.zappi.get('grd')} div={status.zappi.get('div')} "
+            f"sta={status.zappi.get('sta')} pst={status.zappi.get('pst')} "
+            f"vol={status.zappi.get('vol')} frq={status.zappi.get('frq')} harvis={len(harvis)}"
+        )
         new_alloc = assign_harvi_units(st.unit_alloc, [h.serial for h in harvis])
         alloc_changed = new_alloc != st.unit_alloc
         st.unit_alloc = new_alloc
@@ -187,6 +199,7 @@ def onHeartbeat():
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
+            Domoticz.Debug(f"apply units={len(updates)}")
             state = replace(state, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
             domoticz_api.save_state(state)
         else:
@@ -198,6 +211,7 @@ def onHeartbeat():
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
+            Domoticz.Debug(f"apply units={len(updates)}")
             if st.auto_names != before_names or alloc_changed:
                 saved = domoticz_api.load_state()
                 domoticz_api.save_state(
