@@ -65,5 +65,8 @@ def install():
     _module._log.clear()
     _module._heartbeat = None
     _module._config = {}
+    # The plugin imports the EXTENDED framework as `import DomoticzEx as Domoticz`,
+    # so register the stub under both names.
     sys.modules["Domoticz"] = _module
+    sys.modules["DomoticzEx"] = _module
     return _module

@@ -1,7 +1,7 @@
 # pyright: reportMissingImports=false
 """Thin adapter over the DomoticzEx device API. The ONLY module importing Domoticz."""
 
-import Domoticz
+import DomoticzEx as Domoticz
 
 import persistence
 

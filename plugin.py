@@ -43,7 +43,7 @@
 
 from dataclasses import dataclass, field, replace
 
-import Domoticz
+import DomoticzEx as Domoticz
 
 import domoticz_api
 from config import parse_config
