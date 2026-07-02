@@ -10,17 +10,17 @@ def device_id(hardware_id) -> str:
     return f"myenergi_hub{hardware_id}"
 
 
-def _existing_unit(dev_id, unit):
-    dev = Domoticz.Devices.get(dev_id)
+def _existing_unit(devices, dev_id, unit):
+    dev = devices.get(dev_id)
     if dev is None:
         return None
     return dev.Units.get(unit)
 
 
-def apply_updates(dev_id, updates, auto_names) -> dict:
+def apply_updates(devices, dev_id, updates, auto_names) -> dict:
     names = dict(auto_names)
     for up in updates:
-        unit = _existing_unit(dev_id, up.unit)
+        unit = _existing_unit(devices, dev_id, up.unit)
         if unit is None:
             Domoticz.Unit(
                 Name=up.name,
@@ -30,7 +30,7 @@ def apply_updates(dev_id, updates, auto_names) -> dict:
                 Options=up.options,
                 Used=1,
             ).Create()
-            unit = Domoticz.Devices[dev_id].Units[up.unit]
+            unit = devices[dev_id].Units[up.unit]
             unit.nValue = up.nvalue
             unit.sValue = up.svalue
             unit.Update(Log=False)
@@ -53,10 +53,10 @@ def apply_updates(dev_id, updates, auto_names) -> dict:
     return names
 
 
-def read_prev_counters(dev_id, units) -> dict:
+def read_prev_counters(devices, dev_id, units) -> dict:
     out = {}
     for unit in units:
-        u = _existing_unit(dev_id, unit)
+        u = _existing_unit(devices, dev_id, unit)
         wh = 0.0
         if u is not None and ";" in str(u.sValue):
             try:

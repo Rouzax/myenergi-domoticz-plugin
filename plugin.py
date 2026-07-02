@@ -117,13 +117,16 @@ def onHeartbeat():
     st = _state
     if st.client is None or st.config is None:
         return
+    devices = globals().get("Devices")
+    if devices is None:
+        return
     try:
         st.beat += 1
         did = domoticz_api.device_id(_hardware_id())
         status = parse_jstatus(st.client.fetch_status())
         if not status.zappi:
             return
-        prev = domoticz_api.read_prev_counters(did, list(AGG_UNITS.values()))
+        prev = domoticz_api.read_prev_counters(devices, did, list(AGG_UNITS.values()))
         max_step = st.config.max_system_kw * 1000.0 * (st.config.counter_interval / 3600.0) * 4.0
         serial = st.config.hub_serial
 
@@ -148,18 +151,16 @@ def onHeartbeat():
                 state, backfill, today_raw, prev, AGG_UNITS, st.config.max_system_kw, hub_date
             )
             updates, state = plan(status, today_raw, state, prev, st.config, max_step)
-            st.auto_names = domoticz_api.apply_updates(did, updates, st.auto_names)
-            state = replace(state, auto_names=st.auto_names)  # persist name-ownership
+            st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
+            state = replace(state, auto_names=st.auto_names)
             domoticz_api.save_state(state)
         else:
             # Live beat (or refresh with no hub date): update power/status only.
             # No load_state (base_wh is unused when today_sums is None).
             before_names = st.auto_names
             updates, _ = plan(status, None, PluginState(), prev, st.config, max_step)
-            st.auto_names = domoticz_api.apply_updates(did, updates, st.auto_names)
+            st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
             if st.auto_names != before_names:
-                # Devices were just created on this live beat; persist ownership now
-                # so a crash before the first refresh beat cannot lose it.
                 saved = domoticz_api.load_state()
                 domoticz_api.save_state(replace(saved, auto_names=st.auto_names))
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework

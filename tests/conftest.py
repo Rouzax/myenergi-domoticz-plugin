@@ -19,4 +19,5 @@ def domoticz():
     mod = domoticz_stub.install()
     if "plugin" in sys.modules:
         sys.modules["plugin"]._state = sys.modules["plugin"]._PluginState()
+        sys.modules["plugin"].Devices = mod.Devices
     return mod

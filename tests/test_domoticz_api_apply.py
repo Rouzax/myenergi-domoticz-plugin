@@ -10,7 +10,7 @@ def _u(unit, name, sval, tn="kWh", opts=None):
 
 def test_creates_missing_device_with_name_and_values():
     did = device_id(7)
-    names = apply_updates(did, [_u(1, "Solar Total", "10;1.0")], {})
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "10;1.0")], {})
     unit = Domoticz.Devices[did].Units[1]
     assert unit.Name == "Solar Total" and unit.sValue == "10;1.0"
     assert unit.Options == {"EnergyMeterMode": "0"}
@@ -19,10 +19,10 @@ def test_creates_missing_device_with_name_and_values():
 
 def test_updates_value_and_respects_manual_rename():
     did = device_id(7)
-    names = apply_updates(did, [_u(1, "Solar Total", "10;1.0")], {})
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "10;1.0")], {})
     # user manually renamed the tile
     Domoticz.Devices[did].Units[1].Name = "My Panels"
-    names = apply_updates(did, [_u(1, "Solar Total", "20;2.0")], names)
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "20;2.0")], names)
     unit = Domoticz.Devices[did].Units[1]
     assert unit.sValue == "20;2.0"  # value updated
     assert unit.Name == "My Panels"  # manual rename preserved
@@ -30,8 +30,8 @@ def test_updates_value_and_respects_manual_rename():
 
 def test_relocalized_name_applied_when_still_owned():
     did = device_id(7)
-    names = apply_updates(did, [_u(1, "Solar Total", "10;1.0")], {})
-    names = apply_updates(did, [_u(1, "Zonne-opbrengst totaal", "10;1.0")], names)
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "10;1.0")], {})
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Zonne-opbrengst totaal", "10;1.0")], names)
     assert Domoticz.Devices[did].Units[1].Name == "Zonne-opbrengst totaal"
 
 
@@ -40,8 +40,8 @@ def test_owned_name_unchanged_updates_value_no_spurious_rename():
     # a new value. The value must update; no rename/UpdateProperties should fire,
     # and the ownership map must be identical (no churn).
     did = device_id(7)
-    names = apply_updates(did, [_u(1, "Solar Total", "10;1.0")], {})
-    names2 = apply_updates(did, [_u(1, "Solar Total", "20;2.0")], names)
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "10;1.0")], {})
+    names2 = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "20;2.0")], names)
     unit = Domoticz.Devices[did].Units[1]
     assert unit.sValue == "20;2.0"
     assert unit.Name == "Solar Total"
