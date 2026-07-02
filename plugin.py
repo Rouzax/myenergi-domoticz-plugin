@@ -40,9 +40,18 @@
                     <option label="Verbose" value="2"/>
                 </options>
             </param>
-            <param field="HarviNames" label="Harvi Names (serial=Name)" width="300px">
-                <description>Optional. Name each harvi's power device as 'serial=Name', separated by new lines or semicolons (e.g. 21460322=SolarEdge;21460323=Solis). Leave blank to get a default name you can rename in Domoticz.</description>
+        </group>
+        <group label="Harvi Names (optional)">
+            <param field="Harvi1Serial" label="Harvi 1 serial" width="120px">
+                <description>Optional. To give a harvi a friendly name, copy its serial from the auto-created 'Harvi &lt;serial&gt;' device (match it by its live watts) and enter it here. Easiest alternative: just rename the device in Domoticz - the plugin never overwrites your rename.</description>
             </param>
+            <param field="Harvi1Name" label="Harvi 1 name" width="150px"/>
+            <param field="Harvi2Serial" label="Harvi 2 serial" width="120px"/>
+            <param field="Harvi2Name" label="Harvi 2 name" width="150px"/>
+            <param field="Harvi3Serial" label="Harvi 3 serial" width="120px"/>
+            <param field="Harvi3Name" label="Harvi 3 name" width="150px"/>
+            <param field="Harvi4Serial" label="Harvi 4 serial" width="120px"/>
+            <param field="Harvi4Name" label="Harvi 4 name" width="150px"/>
         </group>
     </params>
 </plugin>

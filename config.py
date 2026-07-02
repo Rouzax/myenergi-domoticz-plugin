@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from model import parse_harvi_names
+from model import harvi_names_from_slots
 from translations import LANGUAGES
 
 
@@ -46,5 +46,5 @@ def parse_config(params: dict) -> Config:
         counter_multiple=_int(params, "CounterEvery", 6, 1, 60),
         max_system_kw=_float(params, "MaxSystemKW", 25.0),
         debug_level=_int(params, "DebugLevel", 0, 0, 2),
-        harvi_names=parse_harvi_names(str(params.get("HarviNames", ""))),
+        harvi_names=harvi_names_from_slots(params),
     )
