@@ -5,6 +5,7 @@ validated and int-coerced here first; the client interpolates only validated int
 """
 
 import math
+from dataclasses import dataclass
 
 UNIT_MODE = 12
 UNIT_BOOST = 13
@@ -67,3 +68,51 @@ def clamp_min_green(level) -> "int | None":
 def decode_lck(lck: int) -> str:
     flags = [name for bit, name in LCK_BITS if lck & (1 << bit)]
     return f"{lck} ({', '.join(flags) if flags else 'none'})"
+
+
+@dataclass
+class WriteIntent:
+    kind: str
+    mode: "int | None" = None
+    kwh: "int | None" = None
+    hhmm: "str | None" = None
+    pct: "int | None" = None
+    locked: "bool | None" = None
+
+
+def _sibling_float(siblings, unit):
+    try:
+        return float(str(siblings.get(unit, "")).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
+    if unit == UNIT_MODE:
+        zmo = MODE_LEVELS.get(int(level)) if command == "Set Level" else None
+        return WriteIntent("mode", mode=zmo) if zmo is not None else None
+    if unit == UNIT_BOOST:
+        if command != "Set Level":
+            return None
+        lvl = int(level)
+        if lvl == 0:
+            return WriteIntent("boost_cancel")
+        kwh = validate_kwh(_sibling_float(siblings, UNIT_BOOST_KWH))
+        if kwh is None:
+            return None
+        if lvl == 10:
+            return WriteIntent("boost_manual", kwh=kwh)
+        if lvl == 20:
+            hhmm = validate_hhmm(_sibling_float(siblings, UNIT_BOOST_TIME))
+            return WriteIntent("boost_smart", kwh=kwh, hhmm=hhmm) if hhmm else None
+        return None
+    if unit == UNIT_MIN_GREEN:
+        pct = clamp_min_green(level) if command == "Set Level" else None
+        return WriteIntent("min_green", pct=pct) if pct is not None else None
+    if unit == UNIT_LOCK:
+        if command == "On":
+            return WriteIntent("lock", locked=True)
+        if command == "Off":
+            return WriteIntent("lock", locked=False)
+        return None
+    return None
