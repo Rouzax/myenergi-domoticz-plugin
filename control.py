@@ -89,10 +89,12 @@ def _sibling_float(siblings, unit):
 
 def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
     if unit == UNIT_MODE:
-        zmo = MODE_LEVELS.get(int(level)) if command == "Set Level" else None
+        if command != "Set Level" or not _finite(level):
+            return None
+        zmo = MODE_LEVELS.get(int(level))
         return WriteIntent("mode", mode=zmo) if zmo is not None else None
     if unit == UNIT_BOOST:
-        if command != "Set Level":
+        if command != "Set Level" or not _finite(level):
             return None
         lvl = int(level)
         if lvl == 0:
@@ -104,7 +106,7 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
             return WriteIntent("boost_manual", kwh=kwh)
         if lvl == 20:
             hhmm = validate_hhmm(_sibling_float(siblings, UNIT_BOOST_TIME))
-            return WriteIntent("boost_smart", kwh=kwh, hhmm=hhmm) if hhmm else None
+            return WriteIntent("boost_smart", kwh=kwh, hhmm=hhmm) if hhmm is not None else None
         return None
     if unit == UNIT_MIN_GREEN:
         pct = clamp_min_green(level) if command == "Set Level" else None

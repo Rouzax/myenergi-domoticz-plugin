@@ -1,3 +1,5 @@
+import pytest
+
 from control import (
     UNIT_BOOST,
     UNIT_BOOST_KWH,
@@ -64,3 +66,13 @@ def test_lock_on_off():
 
 def test_unknown_unit_is_none():
     assert decide_write(999, "Set Level", 0, {}) is None
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), "abc", None])
+def test_mode_bad_level_returns_none(bad):
+    assert decide_write(UNIT_MODE, "Set Level", bad, {}) is None
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), "abc", None])
+def test_boost_bad_level_returns_none(bad):
+    assert decide_write(UNIT_BOOST, "Set Level", bad, {UNIT_BOOST_KWH: "5"}) is None
