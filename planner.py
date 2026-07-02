@@ -86,6 +86,7 @@ class DeviceUpdate:
     name: str
     nvalue: int
     svalue: str
+    image: int = 0
 
 
 def _kwh(unit, key, power_w, energy_wh, lang):
@@ -179,3 +180,37 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
         _kwh(UNIT_GRID_EXPORT, "grid_export", powers["grid_export"], energies["grid_export"], lang),
     ]
     return updates, new_state
+
+
+HARVI_UNIT_START = 20
+HARVI_IMAGE = 19  # Domoticz built-in sun icon (matches test IDX 119 CustomImage=19)
+
+
+def assign_harvi_units(existing, serials, start=HARVI_UNIT_START):
+    result = dict(existing)
+    used = set(result.values())
+    nxt = start
+    for serial in sorted(s for s in serials if s not in result):
+        while nxt in used:
+            nxt += 1
+        result[serial] = nxt
+        used.add(nxt)
+    return result
+
+
+def plan_harvi_updates(harvis, harvi_units, harvi_names, lang):
+    updates = []
+    for h in harvis:
+        unit = harvi_units.get(h.serial)
+        if unit is None:
+            continue
+        power = int(sum(ct.power_w for ct in h.cts))
+        name = harvi_names.get(h.serial) or translations.harvi_default_name(h.serial, lang)
+        if any(ct.role == "solar" for ct in h.cts):
+            # Generation: unidirectional watts -> Usage device with the sun icon.
+            updates.append(DeviceUpdate(unit, "Usage", {}, name, 0, f"{power}", HARVI_IMAGE))
+        else:
+            # Anything else (load, battery, storage): a signed Custom watt sensor, no icon,
+            # so a battery swinging charge/discharge (+/-) renders correctly.
+            updates.append(DeviceUpdate(unit, "Custom", {"Custom": "1;W"}, name, 0, f"{power}", 0))
+    return updates

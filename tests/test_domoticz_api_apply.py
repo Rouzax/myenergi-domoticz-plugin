@@ -47,3 +47,10 @@ def test_owned_name_unchanged_updates_value_no_spurious_rename():
     assert unit.Name == "Solar Total"
     # Ownership map must be identical: same keys, same values, no new entries.
     assert names2 == names
+
+
+def test_creates_harvi_device_with_image():
+    did = device_id(7)
+    up = DeviceUpdate(20, "Usage", {}, "SolarEdge", 0, "528", 19)
+    apply_updates(Domoticz.Devices, did, [up], {})
+    assert Domoticz.Devices[did].Units[20].Image == 19

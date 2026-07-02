@@ -67,3 +67,7 @@ def charge_status(sta: int, pst: str, lang: str) -> str:
 def plug_status(pst: str, lang: str) -> str:
     # Unknown code passes through sanitized (untrusted cloud string on a Text device).
     return _lookup(_PST, pst, lang, sanitize.clean_label(str(pst), max_len=4))
+
+
+def harvi_default_name(serial: str, lang: str) -> str:
+    return f"Harvi {serial}"
