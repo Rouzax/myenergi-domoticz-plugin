@@ -21,6 +21,7 @@ def test_min_green_optimistic_update():
     assert update.unit == 16
     assert update.svalue == "60"
     assert update.type_name == "Setpoint"
+    assert update.image == 30
 
 
 def test_mode_bad_level_returns_none():

@@ -6,6 +6,7 @@ def test_persist_boost_kwh_setpoint():
     assert update.unit == UNIT_BOOST_KWH
     assert update.svalue == "5"
     assert update.type_name == "Setpoint"
+    assert update.image == 30
 
 
 def test_persist_boost_time_setpoint():
@@ -13,6 +14,7 @@ def test_persist_boost_time_setpoint():
     assert update.unit == UNIT_BOOST_TIME
     assert update.svalue == "1400"
     assert update.type_name == "Setpoint"
+    assert update.image == 30
 
 
 def test_persist_setpoint_rejects_non_finite_level():

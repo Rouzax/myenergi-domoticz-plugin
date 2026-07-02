@@ -176,6 +176,19 @@ def test_oncommand_rejected_write_never_leaks_authorization_or_digest_artifacts(
             assert artifact not in line
 
 
+def test_oncommand_mode_write_logs_verbose_debug_without_leaking_api_key():
+    sentinel = "sk-myenergi-secret-9f3d2a1b"
+    st = _setup()
+    st.config = Config("10000001", sentinel, "English", 20, 6, 25.0, 0, allow_control=True)
+
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 0, "")
+
+    assert st.client.calls == [("mode", "10000001", 1)]
+    assert any("onCommand unit=12 command=Set Level level=0" in line for line in Domoticz._log)
+    assert any("control write ok kind=mode" in line for line in Domoticz._log)
+    assert not any(sentinel in line for line in Domoticz._log)
+
+
 def test_oncommand_storm_coalescing_marks_timestamp_even_on_dispatch_failure():
     st = _setup()
 

@@ -88,6 +88,15 @@ def test_control_on_emits_boost_and_green_widgets():
     assert {UNIT_BOOST, UNIT_BOOST_KWH, UNIT_BOOST_TIME, UNIT_MIN_GREEN} <= units
 
 
+def test_setpoints_carry_car_charger_icon():
+    status = _status(zappi={"zmo": 1, "bsm": 0, "mgl": 40}, lck=1)
+    updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
+    assert updates[UNIT_BOOST_KWH].image == 30
+    assert updates[UNIT_BOOST_TIME].image == 30
+    assert updates[UNIT_MIN_GREEN].image == 30
+    assert updates[UNIT_LOCK_STATE].image == 0
+
+
 def test_min_green_reconciled_value():
     status = _status(zappi={"zmo": 1, "mgl": 40})
     updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}

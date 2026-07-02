@@ -359,34 +359,40 @@ def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
     if st.client is None or st.config is None or devices is None:
         return
     try:
+        Domoticz.Debug(f"onCommand unit={Unit} command={Command} level={Level}")
         if not st.config.allow_control:
+            Domoticz.Debug("onCommand blocked: control disabled")
             return
         did = domoticz_api.device_id(_hardware_id())
         if Unit in (control.UNIT_BOOST_KWH, control.UNIT_BOOST_TIME) and Command == "Set Level":
             upd = control.persist_input_setpoint(Unit, Level, st.config.language)
             if upd is not None:
                 st.auto_names = domoticz_api.apply_updates(devices, did, [upd], st.auto_names)
+                Domoticz.Debug(f"onCommand persisted setpoint unit={Unit} value={upd.svalue}")
             return
         siblings = _read_siblings(devices, did, [control.UNIT_BOOST_KWH, control.UNIT_BOOST_TIME])
         intent = control.decide_write(Unit, Command, Level, siblings)
         if intent is None:
             return
         if st.zappi_serial is None:
-            Domoticz.Log("myenergi control: charger not seen yet; try again shortly")
+            Domoticz.Debug("onCommand skipped: charger not seen yet")
             return
         now = time.monotonic()
         if control.should_debounce(Unit, now, st.last_write, 3.0) or not control.allow_write_now(
             now, st.last_any_write_ts, 1.0
         ):
+            Domoticz.Debug(f"onCommand debounced unit={Unit}")
             return
         st.last_write[Unit] = now
         st.last_any_write_ts = now
+        Domoticz.Debug(f"onCommand write attempt kind={intent.kind}")
         resp = _dispatch_write(st.client, st.zappi_serial, intent)
         if not control.write_succeeded(intent.kind, resp):
             domoticz_api.log_redacted(
                 Domoticz.Error, f"myenergi write rejected: {resp}", st.config.api_key
             )
             return
+        Domoticz.Debug(f"control write ok kind={intent.kind}")
         opt = control.optimistic_update(Unit, Command, Level, st.config.language)
         if opt is not None:
             st.auto_names = domoticz_api.apply_updates(devices, did, [opt], st.auto_names)

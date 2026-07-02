@@ -194,6 +194,7 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
             name=control_device_name("min_green", language),
             nvalue=0,
             svalue=str(pct),
+            image=30,
         )
     return None
 
@@ -210,6 +211,7 @@ def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
             name=control_device_name("boost_kwh", language),
             nvalue=0,
             svalue=str(kwh),
+            image=30,
         )
     if unit == UNIT_BOOST_TIME:
         hhmm = max(0, min(int(round(float(level))), 2359))
@@ -220,6 +222,7 @@ def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
             name=control_device_name("boost_time", language),
             nvalue=0,
             svalue=str(hhmm),
+            image=30,
         )
     return None
 
@@ -272,6 +275,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                     name=control_device_name("boost_kwh", lang),
                     nvalue=0,
                     svalue="0",
+                    image=30,
                 )
             )
         if UNIT_BOOST_TIME not in existing_units:
@@ -283,6 +287,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                     name=control_device_name("boost_time", lang),
                     nvalue=0,
                     svalue="0",
+                    image=30,
                 )
             )
         mgl = zappi.get("mgl")
@@ -295,6 +300,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                     name=control_device_name("min_green", lang),
                     nvalue=0,
                     svalue=str(mgl),
+                    image=30,
                 )
             )
     if config.allow_control and status.zappi_lck is not None:
