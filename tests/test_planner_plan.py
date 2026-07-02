@@ -92,3 +92,15 @@ def test_plan_emits_grid_import_export():
     assert u[UNIT_GRID_IMPORT].options == {"EnergyMeterMode": "0"}
     assert u[UNIT_GRID_IMPORT].svalue.startswith("734;")
     assert u[UNIT_GRID_EXPORT].svalue.startswith("0;")
+
+
+def test_solar_total_has_return_switchtype():
+    state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
+    prev = {UNIT_SOLAR: 5000.0}
+    updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
+    u = _by_unit(updates)
+    assert u[UNIT_SOLAR].switchtype == 4
+    assert u[UNIT_HOME].switchtype == 0
+    assert u[UNIT_EV].switchtype == 0
+    assert u[UNIT_GRID_IMPORT].switchtype == 0
+    assert u[UNIT_GRID_EXPORT].switchtype == 0

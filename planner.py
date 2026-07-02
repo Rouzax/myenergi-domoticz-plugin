@@ -69,6 +69,7 @@ UNIT_VOLTAGE = 8
 UNIT_FREQUENCY = 9
 UNIT_GRID_IMPORT = 10
 UNIT_GRID_EXPORT = 11
+SOLAR_RETURN_SWITCHTYPE = 4
 AGG_UNITS = {
     "solar": UNIT_SOLAR,
     "home": UNIT_HOME,
@@ -87,9 +88,10 @@ class DeviceUpdate:
     nvalue: int
     svalue: str
     image: int = 0
+    switchtype: int = 0
 
 
-def _kwh(unit, key, power_w, energy_wh, lang):
+def _kwh(unit, key, power_w, energy_wh, lang, switchtype=0):
     return DeviceUpdate(
         unit,
         "kWh",
@@ -97,6 +99,7 @@ def _kwh(unit, key, power_w, energy_wh, lang):
         translations.device_name(key, lang),
         0,
         f"{int(power_w)};{energy_wh:.4f}",
+        switchtype=switchtype,
     )
 
 
@@ -151,7 +154,14 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
     frequency_name = translations.device_name("frequency", lang)
 
     updates = [
-        _kwh(UNIT_SOLAR, "solar_total", powers["solar"], energies["solar"], lang),
+        _kwh(
+            UNIT_SOLAR,
+            "solar_total",
+            powers["solar"],
+            energies["solar"],
+            lang,
+            switchtype=SOLAR_RETURN_SWITCHTYPE,
+        ),
         _kwh(UNIT_HOME, "home", powers["home"], energies["home"], lang),
         _kwh(UNIT_EV, "ev", powers["ev"], energies["ev"], lang),
         _text(UNIT_MODE, "zappi_mode", mode_text, lang),

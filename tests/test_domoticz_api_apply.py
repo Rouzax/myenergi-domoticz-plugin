@@ -54,3 +54,10 @@ def test_creates_harvi_device_with_image():
     up = DeviceUpdate(20, "Usage", {}, "SolarEdge", 0, "528", 19)
     apply_updates(Domoticz.Devices, did, [up], {})
     assert Domoticz.Devices[did].Units[20].Image == 19
+
+
+def test_creates_device_with_switchtype():
+    did = device_id(7)
+    up = DeviceUpdate(1, "kWh", {"EnergyMeterMode": "0"}, "Solar Total", 0, "1215;5000.0000", 0, 4)
+    apply_updates(Domoticz.Devices, did, [up], {})
+    assert Domoticz.Devices[did].Units[1].SwitchType == 4

@@ -97,19 +97,14 @@ myenergi's per-minute energy history and persists across Domoticz restarts.
 
 ## Marking Solar Total as production
 
-Domoticz's generic kWh device type (used for **Solar Total**) is treated as consumption in
-energy graphs by default, the same as any other kWh meter, even though this device tracks
-solar generation. The plugin cannot flag it as generation at device-creation time, but you
-can mark it manually, once, after installation:
+The plugin automatically sets the **Solar Total** device to Domoticz's **Return** type when
+created. This changes the device's icon to a solar panel and its Type label to Return in the
+Utility list.
 
-1. Open the **Utility** tab (or **Setup -> Devices**) and find **Solar Total**.
-2. Click its edit icon.
-3. Set **Type** to **Return** (instead of **Usage**). Leave **Energy read** on **From device**.
-4. Click **Update**.
-
-This changes the device's icon to a solar panel and its Type label to Return in the Utility
-list. It is a per-device setting: if you ever remove Solar Total and let the plugin recreate
-it, repeat this step.
+Note: Domoticz's energy dashboard (Setup -> Devices -> Energy tab) splits generation and usage
+only from an officially recognized P1 Smart Meter. The **Solar Total** Return type is cosmetic:
+it affects the device icon and label, but not the dashboard energy accounting. If you remove
+**Solar Total** and let the plugin recreate it, the Return type is set automatically again.
 
 ---
 

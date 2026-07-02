@@ -6,7 +6,16 @@ import types
 
 class Unit:
     def __init__(
-        self, Name="", DeviceID="", Unit=0, TypeName="", Options=None, Used=0, Image=0, **_kw
+        self,
+        Name="",
+        DeviceID="",
+        Unit=0,
+        TypeName="",
+        Options=None,
+        Used=0,
+        Image=0,
+        Switchtype=0,
+        **_kw,
     ):
         self.Name = Name
         self.DeviceID = DeviceID
@@ -15,6 +24,7 @@ class Unit:
         self.Options = Options or {}
         self.Used = Used
         self.Image = Image
+        self.SwitchType = Switchtype
         self.nValue = 0
         self.sValue = ""
 

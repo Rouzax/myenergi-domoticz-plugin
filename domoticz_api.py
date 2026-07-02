@@ -29,6 +29,7 @@ def apply_updates(devices, dev_id, updates, auto_names) -> dict:
                 TypeName=up.type_name,
                 Options=up.options,
                 Image=up.image,
+                Switchtype=up.switchtype,
                 Used=1,
             ).Create()
             unit = devices[dev_id].Units[up.unit]
