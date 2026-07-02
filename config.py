@@ -16,6 +16,8 @@ class Config:
     max_system_kw: float
     debug_level: int
     harvi_names: "dict[str, str]" = field(default_factory=dict)
+    allow_control: bool = False
+    allow_lock: bool = False
 
 
 def _int(params, key, default, lo, hi):
@@ -33,6 +35,10 @@ def _float(params, key, default):
         return default
 
 
+def _bool(params, key) -> bool:
+    return str(params.get(key, "")).strip().lower() == "true"
+
+
 def parse_config(params: dict) -> Config:
     language = str(params.get("Language", "English"))
     if language not in LANGUAGES:
@@ -47,4 +53,6 @@ def parse_config(params: dict) -> Config:
         max_system_kw=_float(params, "MaxSystemKW", 25.0),
         debug_level=_int(params, "DebugLevel", 0, 0, 2),
         harvi_names=harvi_names_from_slots(params),
+        allow_control=_bool(params, "AllowControl"),
+        allow_lock=_bool(params, "AllowLock"),
     )
