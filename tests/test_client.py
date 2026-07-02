@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from myenergi_client import AsnValidationError, MyEnergiClient
+from myenergi_client import AsnValidationError, MyEnergiClient, WriteError
 
 
 def _client():
@@ -131,3 +131,86 @@ def test_asn_host_credentials_registered_for_digest():
         "MyEnergi Telemetry", "https://s18.myenergi.net/cgi-jstatus-*"
     )
     assert (user, pw) == ("20000002", "TESTKEY")
+
+
+# ---------------------------------------------------------------------------
+# Write-method tests (gated control endpoints)
+# ---------------------------------------------------------------------------
+
+
+class _RecordingOpener:
+    """Records the last requested URL and returns a canned control-endpoint response."""
+
+    def __init__(self):
+        self.url = None
+
+    def open(self, req, timeout=None):  # noqa: ARG002
+        self.url = req.full_url
+        return _FakeResponse(b'{"status":0}', {})
+
+
+def _write_client(writes=True, lock=True):
+    rec = _RecordingOpener()
+    c = MyEnergiClient(
+        "10000001",
+        "k",
+        opener_factory=lambda: rec,
+        writes_enabled=writes,
+        lock_enabled=lock,
+    )
+    c._asn = "s18.myenergi.net"
+    return c, rec
+
+
+class TestWriteMethods:
+    def test_set_mode_builds_expected_url(self):
+        c, rec = _write_client()
+        resp = c.set_zappi_mode("10000001", 1)
+        assert rec.url == "https://s18.myenergi.net/cgi-zappi-mode-Z10000001-1-0-0-0000"
+        assert resp == {"status": 0}
+
+    def test_write_blocked_when_gate_off(self):
+        c, _ = _write_client(writes=False)
+        with pytest.raises(WriteError):
+            c.set_zappi_mode("10000001", 1)
+
+    def test_lock_blocked_when_lock_gate_off(self):
+        c, _ = _write_client(lock=False)
+        with pytest.raises(WriteError):
+            c.set_lock("10000001", "01000000")
+
+    def test_non_digit_serial_refused(self):
+        c, _ = _write_client()
+        with pytest.raises(WriteError):
+            c.set_zappi_mode("10000001/../evil", 1)
+
+    def test_smart_boost_url(self):
+        c, rec = _write_client()
+        c.set_boost_smart("10000001", 5, "1400")
+        assert rec.url == "https://s18.myenergi.net/cgi-zappi-mode-Z10000001-0-11-5-1400"
+
+    def test_manual_boost_url(self):
+        c, rec = _write_client()
+        c.set_boost_manual("10000001", 5)
+        assert rec.url == "https://s18.myenergi.net/cgi-zappi-mode-Z10000001-0-10-5-0000"
+
+    def test_cancel_boost_url(self):
+        c, rec = _write_client()
+        c.cancel_boost("10000001")
+        assert rec.url == "https://s18.myenergi.net/cgi-zappi-mode-Z10000001-0-2-0-0000"
+
+    def test_min_green_url(self):
+        c, rec = _write_client()
+        c.set_min_green("10000001", 50)
+        assert rec.url == "https://s18.myenergi.net/cgi-set-min-green-Z10000001-50"
+
+    def test_lock_url(self):
+        c, rec = _write_client()
+        c.set_lock("10000001", "01000000")
+        assert rec.url == "https://s18.myenergi.net/cgi-jlock-10000001-01000000"
+
+    def test_write_requires_base_url(self):
+        c, _ = _write_client()
+        c._asn = None
+        with pytest.raises(WriteError):
+            c.set_zappi_mode("10000001", 1)

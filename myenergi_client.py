@@ -1,7 +1,10 @@
 """myenergi cloud transport: digest auth, ASN allowlist, host-scoped credentials.
 
-Read-only in Plan 1. Never logs the API key or Authorization header; never enables
-transport debuglevel; HTTPS + verified TLS only (stdlib default context).
+Read methods (`fetch_status`, `fetch_jday`, `discover_from_director`) are always
+available. Write methods (zappi mode, boost, min-green, lock) are gated off by
+default and only run when `writes_enabled` / `lock_enabled` is explicitly set.
+Never logs the API key or Authorization header; never enables transport
+debuglevel; HTTPS + verified TLS only (stdlib default context).
 """
 
 import json
@@ -16,12 +19,28 @@ class AsnValidationError(Exception):
     pass
 
 
+class WriteError(Exception):
+    pass
+
+
 class MyEnergiClient:
-    def __init__(self, serial, api_key, opener_factory=None, max_bytes=1_048_576):
+    def __init__(
+        self,
+        serial,
+        api_key,
+        opener_factory=None,
+        max_bytes=1_048_576,
+        writes_enabled=False,
+        lock_enabled=False,
+        control_timeout=5,
+    ):
         self._serial = serial
         self._api_key = api_key
         self._max_bytes = max_bytes
         self._asn = None
+        self._writes_enabled = writes_enabled
+        self._lock_enabled = lock_enabled
+        self._control_timeout = control_timeout
         # Digest credentials scoped to *.myenergi.net so urllib will not emit
         # Authorization to any other host even if a redirect slips through.
         # HTTPPasswordMgrWithDefaultRealm is required so find_user_password falls
@@ -61,10 +80,10 @@ class MyEnergiClient:
         self._pwmgr.add_password(None, f"https://{host}", self._serial, self._api_key)
         return host
 
-    def _get_json(self, url):
+    def _get_json(self, url, timeout=15):
         opener = self._opener_factory()
         req = urllib.request.Request(url, headers={"User-Agent": "Domoticz-myenergi"})
-        with opener.open(req, timeout=15) as resp:
+        with opener.open(req, timeout=timeout) as resp:
             body = resp.read(self._max_bytes)
         return json.loads(body.decode("utf-8"))
 
@@ -84,3 +103,36 @@ class MyEnergiClient:
         )
         with opener.open(req, timeout=15) as resp:
             return self.discover_asn(dict(resp.headers))
+
+    def _control_get(self, serial, path, allow):
+        if not allow:
+            raise WriteError("control writes disabled")
+        if not str(serial).isdigit():
+            raise WriteError("invalid serial")
+        if not self.base_url:
+            raise WriteError("ASN not discovered yet")
+        return self._get_json(f"{self.base_url}{path}", timeout=self._control_timeout)
+
+    def set_zappi_mode(self, serial, mode):
+        path = f"/cgi-zappi-mode-Z{serial}-{int(mode)}-0-0-0000"
+        return self._control_get(serial, path, self._writes_enabled)
+
+    def set_boost_manual(self, serial, kwh):
+        path = f"/cgi-zappi-mode-Z{serial}-0-10-{int(kwh)}-0000"
+        return self._control_get(serial, path, self._writes_enabled)
+
+    def set_boost_smart(self, serial, kwh, hhmm):
+        path = f"/cgi-zappi-mode-Z{serial}-0-11-{int(kwh)}-{hhmm}"
+        return self._control_get(serial, path, self._writes_enabled)
+
+    def cancel_boost(self, serial):
+        path = f"/cgi-zappi-mode-Z{serial}-0-2-0-0000"
+        return self._control_get(serial, path, self._writes_enabled)
+
+    def set_min_green(self, serial, pct):
+        path = f"/cgi-set-min-green-Z{serial}-{int(pct)}"
+        return self._control_get(serial, path, self._writes_enabled)
+
+    def set_lock(self, serial, bitmask):
+        path = f"/cgi-jlock-{serial}-{bitmask}"
+        return self._control_get(serial, path, self._lock_enabled)
