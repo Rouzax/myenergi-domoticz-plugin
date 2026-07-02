@@ -31,3 +31,15 @@ def test_parse_jstatus_discovers_devices():
 def test_parse_jstatus_ignores_empty_and_unknown_serial():
     payload = [{"zappi": [{"sno": "not-a-serial", "ectt1": "Grid", "ectp1": 5}]}]
     assert parse_jstatus(payload).devices == []
+
+
+def test_parse_jstatus_extracts_lck():
+    payload = [{"zappi": [{"sno": 10000001, "zmo": 1, "lck": 16}]}]
+    status = parse_jstatus(payload)
+    assert status.zappi_lck == 16
+
+
+def test_parse_jstatus_lck_absent_is_none():
+    payload = [{"zappi": [{"sno": 10000001, "zmo": 1}]}]
+    status = parse_jstatus(payload)
+    assert status.zappi_lck is None

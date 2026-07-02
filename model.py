@@ -60,6 +60,7 @@ class Device:
 class SystemStatus:
     devices: "list[Device]"
     zappi: dict
+    zappi_lck: "int | None" = None
 
 
 def _extract_cts(raw: dict) -> "list[CT]":
@@ -87,7 +88,9 @@ def parse_jstatus(payload: list) -> SystemStatus:
                 devices.append(Device(kind=kind, serial=serial, cts=_extract_cts(raw)))
                 if kind == "zappi":
                     zappi_raw = raw
-    return SystemStatus(devices=devices, zappi=zappi_raw)
+    lck_raw = zappi_raw.get("lck") if isinstance(zappi_raw, dict) else None
+    zappi_lck = lck_raw if isinstance(lck_raw, int) and not isinstance(lck_raw, bool) else None
+    return SystemStatus(devices=devices, zappi=zappi_raw, zappi_lck=zappi_lck)
 
 
 _VALID_ROLES = {"solar", "grid", "ev", "other"}
