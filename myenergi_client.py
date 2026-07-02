@@ -87,10 +87,10 @@ class MyEnergiClient:
             body = resp.read(self._max_bytes)
         return json.loads(body.decode("utf-8"))
 
-    def fetch_status(self):
+    def fetch_status(self, timeout=15):
         if not self.base_url:
             raise RuntimeError("ASN not discovered yet; call discover_from_director first")
-        return self._get_json(f"{self.base_url}/cgi-jstatus-*")
+        return self._get_json(f"{self.base_url}/cgi-jstatus-*", timeout=timeout)
 
     def fetch_jday(self, device_letter, serial, iso_date):
         y, m, d = (int(p) for p in iso_date.split("-"))

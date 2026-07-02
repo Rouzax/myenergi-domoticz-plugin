@@ -168,6 +168,68 @@ def _setpoint_options(unit_label, vmin, vmax, step):
     }
 
 
+def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
+    if unit == UNIT_MODE:
+        if command != "Set Level" or not _finite(level):
+            return None
+        lvl = int(level)
+        if lvl not in MODE_LEVELS:
+            return None
+        return DeviceUpdate(
+            unit=UNIT_MODE,
+            type_name="Selector Switch",
+            options=_selector_options("mode", language),
+            name=control_device_name("mode", language),
+            nvalue=lvl,
+            svalue=str(lvl),
+            switchtype=18,
+        )
+    if unit == UNIT_BOOST:
+        if command != "Set Level" or not _finite(level):
+            return None
+        lvl = int(level)
+        if lvl not in (0, 10, 20):
+            return None
+        return DeviceUpdate(
+            unit=UNIT_BOOST,
+            type_name="Selector Switch",
+            options=_selector_options("boost", language),
+            name=control_device_name("boost", language),
+            nvalue=lvl,
+            svalue=str(lvl),
+            switchtype=18,
+        )
+    if unit == UNIT_MIN_GREEN:
+        pct = clamp_min_green(level) if command == "Set Level" else None
+        if pct is None:
+            return None
+        return DeviceUpdate(
+            unit=UNIT_MIN_GREEN,
+            type_name="Setpoint",
+            options=_setpoint_options("%", 0, MAX_GREEN, 5),
+            name=control_device_name("min_green", language),
+            nvalue=0,
+            svalue=str(pct),
+        )
+    if unit == UNIT_LOCK:
+        if command == "On":
+            locked = 1
+        elif command == "Off":
+            locked = 0
+        else:
+            return None
+        return DeviceUpdate(
+            unit=UNIT_LOCK,
+            type_name="On/Off",
+            options={},
+            name=control_device_name("lock", language),
+            nvalue=locked,
+            svalue="",
+            switchtype=19,
+        )
+    return None
+
+
 def boost_resting_level(zappi) -> int:
     bsm = zappi.get("bsm") if isinstance(zappi, dict) else None
     if not isinstance(bsm, int) or bsm == 0:

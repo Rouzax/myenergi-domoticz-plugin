@@ -88,6 +88,7 @@ from persistence import PluginState
 from planner import AGG_UNITS, advance_baselines, assign_harvi_units, plan, plan_harvi_updates
 
 _MAX_BACKFILL_DAYS = 14
+_CONFIRM_TIMEOUT = 5
 
 # Debug Level -> Domoticz.Debugging() bitmask. 2 = Python-only (this plugin's own
 # Domoticz.Debug lines); 1 = All (adds framework internals). 0 = off.
@@ -321,17 +322,20 @@ def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
             now, st.last_any_write_ts, 1.0
         ):
             return
-        resp = _dispatch_write(st.client, st.zappi_serial, intent)
         st.last_write[Unit] = now
         st.last_any_write_ts = now
+        resp = _dispatch_write(st.client, st.zappi_serial, intent)
         if not control.write_succeeded(intent.kind, resp):
             domoticz_api.log_redacted(
                 Domoticz.Error, f"myenergi write rejected: {resp}", st.config.api_key
             )
             return
+        opt = control.optimistic_update(Unit, Command, Level, st.config.language)
+        if opt is not None:
+            st.auto_names = domoticz_api.apply_updates(devices, did, [opt], st.auto_names)
         st.reconcile_suppress[Unit] = now + 2 * st.config.live_interval
         try:
-            status = parse_jstatus(st.client.fetch_status())
+            status = parse_jstatus(st.client.fetch_status(timeout=_CONFIRM_TIMEOUT))
             _reconcile_from_status(devices, did, status)
         except Exception as exc:  # noqa: BLE001 - a confirm failure never rolls back the write
             domoticz_api.log_redacted(
