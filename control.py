@@ -7,6 +7,9 @@ validated and int-coerced here first; the client interpolates only validated int
 import math
 from dataclasses import dataclass
 
+from planner import DeviceUpdate
+from translations import control_device_name, control_level_names
+
 UNIT_MODE = 12
 UNIT_BOOST = 13
 UNIT_BOOST_KWH = 14
@@ -135,3 +138,53 @@ def should_debounce(unit, now, last_write, min_gap) -> bool:
 
 def allow_write_now(now, last_any_ts, min_gap) -> bool:
     return (now - last_any_ts) >= min_gap
+
+
+def _selector_options(kind, language, style="1"):
+    return {
+        "LevelActions": "|" * len(control_level_names(kind, language).split("|")),
+        "LevelNames": control_level_names(kind, language),
+        "LevelOffHidden": "false",
+        "SelectorStyle": style,
+    }
+
+
+def _setpoint_options(unit_label, vmin, vmax, step):
+    return {
+        "ValueUnit": unit_label,
+        "ValueMin": str(vmin),
+        "ValueMax": str(vmax),
+        "ValueStep": str(step),
+    }
+
+
+def plan_control_updates(status, config, existing_units=frozenset()) -> "list[DeviceUpdate]":
+    updates = []
+    lang = config.language
+    zappi = status.zappi if isinstance(status.zappi, dict) else {}
+    if config.allow_control:
+        zmo = zappi.get("zmo")
+        if isinstance(zmo, int) and zmo in ZMO_TO_LEVEL:
+            updates.append(
+                DeviceUpdate(
+                    unit=UNIT_MODE,
+                    type_name="Selector Switch",
+                    options=_selector_options("mode", lang),
+                    name=control_device_name("mode", lang),
+                    nvalue=ZMO_TO_LEVEL[zmo],
+                    svalue=str(ZMO_TO_LEVEL[zmo]),
+                    switchtype=18,
+                )
+            )
+    if config.allow_lock and status.zappi_lck is not None:
+        updates.append(
+            DeviceUpdate(
+                unit=UNIT_LOCK_STATE,
+                type_name="Text",
+                options={},
+                name=control_device_name("lock_state", lang),
+                nvalue=0,
+                svalue=decode_lck(status.zappi_lck),
+            )
+        )
+    return updates
