@@ -20,11 +20,37 @@ def test_onstart_sets_heartbeat_and_config(monkeypatch):
         "ApiKey": "k",
         "Language": "English",
         "LivePoll": "20",
-        "CounterPoll": "120",
+        "CounterEvery": "6",
         "MaxSystemKW": "25",
         "DebugLevel": "0",
     }
     plugin.onStart()
     assert Domoticz._heartbeat == 20
     assert plugin._state.config.hub_serial == "20000002"
+    assert plugin._state.counter_every == 6
     assert plugin._state.beat == 0
+    assert Domoticz._debugging == 0  # DebugLevel None -> Debugging off
+
+
+def test_onstart_verbose_enables_debugging(monkeypatch):
+    """DebugLevel Verbose (2) turns on Domoticz.Debugging(1) = all."""
+
+    class _FakeClient:
+        def __init__(self, serial, api_key):
+            self.base_url = "https://s18.myenergi.net"
+
+        def discover_from_director(self):
+            return "s18.myenergi.net"
+
+    monkeypatch.setattr(plugin, "MyEnergiClient", _FakeClient)
+    plugin.Parameters = {
+        "Username": "20000002",
+        "ApiKey": "k",
+        "Language": "English",
+        "LivePoll": "20",
+        "CounterEvery": "6",
+        "MaxSystemKW": "25",
+        "DebugLevel": "2",
+    }
+    plugin.onStart()
+    assert Domoticz._debugging == 1

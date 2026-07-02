@@ -23,7 +23,7 @@ class _FakeClient:
                         "div": 0,
                         "che": 0.0,
                         "vol": 2300,
-                        "frq": 5000,
+                        "frq": 49.98,
                         "zmo": 1,
                         "sta": 1,
                         "pst": "A",
@@ -38,7 +38,7 @@ class _FakeClient:
 
 def _setup(counter_every=1, last_date="2026-07-01"):
     plugin._state = plugin._PluginState()
-    plugin._state.config = Config("20000002", "k", "English", 20, 120, 25.0, 0)
+    plugin._state.config = Config("20000002", "k", "English", 20, 6, 25.0, 0)
     plugin._state.client = _FakeClient()
     plugin._state.counter_every = counter_every
     import domoticz_api
@@ -58,9 +58,20 @@ def test_refresh_beat_creates_devices_and_counter():
     assert solar.sValue == "1000;1000.0000"
 
 
+def test_first_beat_is_always_a_refresh():
+    # Item 3: beat 1 refreshes counters even when counter_every is large, so the
+    # kWh devices carry a real total from the first heartbeat instead of 0.
+    _setup(counter_every=99)
+    plugin.onHeartbeat()  # beat 1
+    did = device_id(0)
+    solar = Domoticz.Devices[did].Units[1]
+    assert solar.sValue == "1000;1000.0000"  # base 0 + today 1000 Wh (refresh path)
+
+
 def test_live_beat_updates_power_keeps_energy():
     _setup(counter_every=2, last_date="2026-07-01")
-    plugin.onHeartbeat()  # beat 1 -> live (1 % 2 != 0)
+    plugin._state.beat = 2  # next beat = 3 -> live (not first, 3 % 2 != 0)
+    plugin.onHeartbeat()
     did = device_id(0)
     solar = Domoticz.Devices[did].Units[1]
     assert solar.sValue.startswith("1000;")  # power set; energy from prev (0)
@@ -91,10 +102,11 @@ def test_backfill_truncation_logs_and_caps_days():
 
 
 def test_live_beat_persists_auto_names_on_device_creation():
-    # First live beat creates all 9 devices; auto_names ownership must be persisted
-    # immediately so a crash before the first refresh beat cannot lose it.
+    # A live beat that creates all 9 devices must persist auto_names ownership
+    # immediately so a crash cannot lose it before the next refresh writes state.
     _setup(counter_every=2, last_date="2026-07-01")
-    plugin.onHeartbeat()  # beat 1 -> live beat (1 % 2 != 0)
+    plugin._state.beat = 2  # next beat = 3 -> live beat (not first, 3 % 2 != 0)
+    plugin.onHeartbeat()
 
     state_json = Domoticz.Configuration().get("state", "")
     assert state_json, "state must be written after device creation"

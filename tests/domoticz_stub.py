@@ -48,6 +48,7 @@ _module.Debug = _log
 _module.Error = _log
 _module.Status = _log
 _module.Heartbeat = lambda seconds: setattr(_module, "_heartbeat", seconds)
+_module.Debugging = lambda value: setattr(_module, "_debugging", value)
 
 
 def _configuration(config=None):

@@ -23,8 +23,8 @@
         <param field="LivePoll" type="number" label="Live Poll Interval (s)" min="15" max="300" default="20" width="100px">
             <description>How often to poll live power and status, in seconds (15 to 300). myenergi data updates about once per second, so 15 to 30s is plenty and gentle on their cloud.</description>
         </param>
-        <param field="CounterPoll" type="number" label="Counter Refresh (s)" min="30" max="900" default="120" width="100px">
-            <description>How often to refresh the cumulative kWh counters from myenergi's energy history, in seconds (30 to 900). Rounded to a whole multiple of the live poll interval.</description>
+        <param field="CounterEvery" type="number" label="Counter Refresh (every N live polls)" min="1" max="60" default="6" width="100px">
+            <description>How often to refresh the cumulative kWh counters from myenergi's energy history, expressed as a multiple of the live poll interval (1 to 60). At the default 20s live poll, 6 refreshes the counters every 120s. 1 = refresh on every live poll (heaviest on myenergi's cloud).</description>
         </param>
         <param field="MaxSystemKW" type="number" label="Max System Power (kW)" min="1" max="100" default="25" width="100px">
             <description>Total system power ceiling in kW, used as a sanity clamp on counter jumps. Set it roughly to your combined solar plus grid plus charger capacity.</description>
@@ -54,6 +54,14 @@ from persistence import PluginState
 from planner import AGG_UNITS, advance_baselines, plan
 
 _MAX_BACKFILL_DAYS = 14
+
+# Debug Level -> Domoticz.Debugging() bitmask. 2 = Python-only (this plugin's own
+# Domoticz.Debug lines); 1 = All (adds framework internals). 0 = off.
+_DEBUG_MASK = {0: 0, 1: 2, 2: 1}
+
+
+def _apply_debug_level(level):
+    Domoticz.Debugging(_DEBUG_MASK.get(level, 0))
 
 
 def _hardware_id():
@@ -94,8 +102,13 @@ def onStart():
     _state = _PluginState()
     cfg = parse_config(Parameters)  # noqa: F821 - Parameters injected by Domoticz
     _state.config = cfg
-    _state.counter_every = max(1, round(cfg.counter_interval / cfg.live_interval))
+    _apply_debug_level(cfg.debug_level)
+    _state.counter_every = cfg.counter_multiple
     Domoticz.Heartbeat(cfg.live_interval)
+    Domoticz.Debug(
+        f"onStart: hub={cfg.hub_serial} live={cfg.live_interval}s "
+        f"counter_every={_state.counter_every} lang={cfg.language}"
+    )
     # Restore name-ownership from persisted state (survives settings-edit restarts).
     # Guarded: corrupt persisted JSON must never block the plugin from starting.
     try:
@@ -105,6 +118,7 @@ def onStart():
     try:
         _state.client = MyEnergiClient(cfg.hub_serial, cfg.api_key)
         _state.client.discover_from_director()
+        Domoticz.Debug(f"discovery ok: base={_state.client.base_url}")
     except Exception as exc:  # noqa: BLE001 - never let onStart crash the framework
         domoticz_api.log_redacted(Domoticz.Error, f"myenergi discovery failed: {exc}", cfg.api_key)
 
@@ -127,11 +141,13 @@ def onHeartbeat():
         if not status.zappi:
             return
         prev = domoticz_api.read_prev_counters(devices, did, list(AGG_UNITS.values()))
-        max_step = st.config.max_system_kw * 1000.0 * (st.config.counter_interval / 3600.0) * 4.0
+        refresh_seconds = st.config.live_interval * st.config.counter_multiple
+        max_step = st.config.max_system_kw * 1000.0 * (refresh_seconds / 3600.0) * 4.0
         serial = st.config.hub_serial
 
-        is_refresh = (st.beat % st.counter_every) == 0
+        is_refresh = st.beat == 1 or (st.beat % st.counter_every) == 0
         hub_date = _hub_date(status.zappi) if is_refresh else None
+        Domoticz.Debug(f"heartbeat beat={st.beat} refresh={is_refresh} hub_date={hub_date}")
 
         if is_refresh and hub_date:
             state = domoticz_api.load_state()
@@ -145,6 +161,7 @@ def onHeartbeat():
                     st.config.api_key,
                 )
                 missing = missing[:_MAX_BACKFILL_DAYS]
+            Domoticz.Debug(f"counter refresh hub_date={hub_date} backfill_days={len(missing)}")
             backfill = [parse_jday(st.client.fetch_jday("Z", serial, d)) for d in missing]
             today_raw = parse_jday(st.client.fetch_jday("Z", serial, hub_date))
             state = advance_baselines(

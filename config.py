@@ -11,7 +11,7 @@ class Config:
     api_key: str
     language: str
     live_interval: int
-    counter_interval: int
+    counter_multiple: int
     max_system_kw: float
     debug_level: int
 
@@ -41,7 +41,7 @@ def parse_config(params: dict) -> Config:
         api_key=api_key,
         language=language,
         live_interval=_int(params, "LivePoll", 20, 15, 300),
-        counter_interval=_int(params, "CounterPoll", 120, 30, 900),
+        counter_multiple=_int(params, "CounterEvery", 6, 1, 60),
         max_system_kw=_float(params, "MaxSystemKW", 25.0),
-        debug_level=_int(params, "DebugLevel", 0, 0, 3),
+        debug_level=_int(params, "DebugLevel", 0, 0, 2),
     )
