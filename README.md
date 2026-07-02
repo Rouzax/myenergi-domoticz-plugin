@@ -107,3 +107,18 @@ mode on your zappi). The Domoticz database stores it in cleartext.
 
 This plugin implements no write or control commands. It is strictly read-only: it fetches
 data and updates Domoticz devices; it never sends a command back to the charger.
+
+---
+
+## Acknowledgements
+
+The myenergi cloud API is unofficial and undocumented. The field meanings used here (status
+codes, plug states, energy fields) were cross-checked against two community projects:
+
+- [twonk/MyEnergi-App-Api](https://github.com/twonk/MyEnergi-App-Api) - a reverse-engineered
+  reference for the myenergi app API.
+- [CJNE/pymyenergi](https://github.com/CJNE/pymyenergi) - an async Python library for myenergi
+  devices.
+
+Thanks to their authors and contributors. This plugin is independent and not affiliated with
+myenergi or either project.
