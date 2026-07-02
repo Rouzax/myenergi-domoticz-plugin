@@ -73,6 +73,16 @@ def decode_lck(lck: int) -> str:
     return f"{lck} ({', '.join(flags) if flags else 'none'})"
 
 
+# Provisional bitmasks for the zappi lock write endpoint, pending live-hardware
+# verification (Task 16) before the lock write device is enabled.
+LOCK_BITMASK_LOCK = "10000000"
+LOCK_BITMASK_UNLOCK = "01000000"
+
+
+def lock_bitmask(locked: bool) -> str:
+    return LOCK_BITMASK_LOCK if locked else LOCK_BITMASK_UNLOCK
+
+
 @dataclass
 class WriteIntent:
     kind: str
@@ -123,7 +133,7 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
     return None
 
 
-def write_succeeded(kind: str, resp: dict) -> bool:
+def write_succeeded(kind: str, resp: object) -> bool:
     if not isinstance(resp, dict):
         return False
     if kind == "min_green":

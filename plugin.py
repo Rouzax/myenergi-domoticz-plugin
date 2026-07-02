@@ -78,6 +78,7 @@ from dataclasses import dataclass, field, replace
 
 import DomoticzEx as Domoticz
 
+import control
 import domoticz_api
 from config import parse_config
 from energy import missing_dates
@@ -257,4 +258,86 @@ def onHeartbeat():
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
+        )
+
+
+def _read_siblings(devices, did, units):
+    siblings = {}
+    dev = devices.get(did) if devices else None
+    if dev is not None:
+        for unit in units:
+            u = dev.Units.get(unit)
+            if u is not None:
+                siblings[unit] = u.sValue
+    return siblings
+
+
+def _dispatch_write(client, serial, intent):
+    if intent.kind == "mode":
+        return client.set_zappi_mode(serial, intent.mode)
+    if intent.kind == "boost_manual":
+        return client.set_boost_manual(serial, intent.kwh)
+    if intent.kind == "boost_smart":
+        return client.set_boost_smart(serial, intent.kwh, intent.hhmm)
+    if intent.kind == "boost_cancel":
+        return client.cancel_boost(serial)
+    if intent.kind == "min_green":
+        return client.set_min_green(serial, intent.pct)
+    if intent.kind == "lock":
+        return client.set_lock(serial, control.lock_bitmask(intent.locked))
+    return None
+
+
+def _existing_units(devices, did):
+    dev = devices.get(did) if devices else None
+    return frozenset(dev.Units.keys()) if dev is not None else frozenset()
+
+
+def _reconcile_from_status(devices, did, status):
+    existing = _existing_units(devices, did)
+    updates = control.plan_control_updates(status, _state.config, existing)
+    _state.auto_names = domoticz_api.apply_updates(devices, did, updates, _state.auto_names)
+
+
+def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
+    st = _state
+    devices = globals().get("Devices")
+    if st.client is None or st.config is None or devices is None:
+        return
+    try:
+        gate_ok = st.config.allow_lock if Unit == control.UNIT_LOCK else st.config.allow_control
+        if not gate_ok:
+            return
+        did = domoticz_api.device_id(_hardware_id())
+        siblings = _read_siblings(devices, did, [control.UNIT_BOOST_KWH, control.UNIT_BOOST_TIME])
+        intent = control.decide_write(Unit, Command, Level, siblings)
+        if intent is None:
+            return
+        if st.zappi_serial is None:
+            Domoticz.Log("myenergi control: charger not seen yet; try again shortly")
+            return
+        now = time.monotonic()
+        if control.should_debounce(Unit, now, st.last_write, 3.0) or not control.allow_write_now(
+            now, st.last_any_write_ts, 1.0
+        ):
+            return
+        resp = _dispatch_write(st.client, st.zappi_serial, intent)
+        st.last_write[Unit] = now
+        st.last_any_write_ts = now
+        if not control.write_succeeded(intent.kind, resp):
+            domoticz_api.log_redacted(
+                Domoticz.Error, f"myenergi write rejected: {resp}", st.config.api_key
+            )
+            return
+        st.reconcile_suppress[Unit] = now + 2 * st.config.live_interval
+        try:
+            status = parse_jstatus(st.client.fetch_status())
+            _reconcile_from_status(devices, did, status)
+        except Exception as exc:  # noqa: BLE001 - a confirm failure never rolls back the write
+            domoticz_api.log_redacted(
+                Domoticz.Status, f"myenergi confirm skipped: {exc}", st.config.api_key
+            )
+    except Exception as exc:  # noqa: BLE001 - onCommand must never raise into the framework
+        domoticz_api.log_redacted(
+            Domoticz.Error, f"myenergi onCommand error: {exc}", st.config.api_key
         )
