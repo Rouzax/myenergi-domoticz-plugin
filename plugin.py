@@ -40,6 +40,9 @@
                     <option label="Verbose" value="2"/>
                 </options>
             </param>
+            <param field="HarviNames" label="Harvi Names (serial=Name)" width="300px">
+                <description>Optional. Name each harvi's power device as 'serial=Name', separated by new lines or semicolons (e.g. 21460322=SolarEdge;21460323=Solis). Leave blank to get a default name you can rename in Domoticz.</description>
+            </param>
         </group>
     </params>
 </plugin>
@@ -55,7 +58,7 @@ from energy import missing_dates
 from model import parse_jday, parse_jstatus
 from myenergi_client import MyEnergiClient
 from persistence import PluginState
-from planner import AGG_UNITS, advance_baselines, plan
+from planner import AGG_UNITS, advance_baselines, assign_harvi_units, plan, plan_harvi_updates
 
 _MAX_BACKFILL_DAYS = 14
 
@@ -96,6 +99,7 @@ class _PluginState:
     beat: int = 0
     counter_every: int = 6
     auto_names: dict = field(default_factory=dict)
+    unit_alloc: dict = field(default_factory=dict)
 
 
 _state = _PluginState()
@@ -116,9 +120,12 @@ def onStart():
     # Restore name-ownership from persisted state (survives settings-edit restarts).
     # Guarded: corrupt persisted JSON must never block the plugin from starting.
     try:
-        _state.auto_names = domoticz_api.load_state().auto_names
+        _restored = domoticz_api.load_state()
+        _state.auto_names = _restored.auto_names
+        _state.unit_alloc = _restored.unit_alloc
     except Exception:  # noqa: BLE001
         _state.auto_names = {}
+        _state.unit_alloc = {}
     try:
         _state.client = MyEnergiClient(cfg.hub_serial, cfg.api_key)
         _state.client.discover_from_director()
@@ -144,6 +151,10 @@ def onHeartbeat():
         status = parse_jstatus(st.client.fetch_status())
         if not status.zappi:
             return
+        harvis = [d for d in status.devices if d.kind == "harvi"]
+        new_alloc = assign_harvi_units(st.unit_alloc, [h.serial for h in harvis])
+        alloc_changed = new_alloc != st.unit_alloc
+        st.unit_alloc = new_alloc
         prev = domoticz_api.read_prev_counters(devices, did, list(AGG_UNITS.values()))
         refresh_seconds = st.config.live_interval * st.config.counter_multiple
         max_step = st.config.max_system_kw * 1000.0 * (refresh_seconds / 3600.0) * 4.0
@@ -172,18 +183,26 @@ def onHeartbeat():
                 state, backfill, today_raw, prev, AGG_UNITS, st.config.max_system_kw, hub_date
             )
             updates, state = plan(status, today_raw, state, prev, st.config, max_step)
+            updates = updates + plan_harvi_updates(
+                harvis, st.unit_alloc, st.config.harvi_names, st.config.language
+            )
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
-            state = replace(state, auto_names=st.auto_names)
+            state = replace(state, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
             domoticz_api.save_state(state)
         else:
             # Live beat (or refresh with no hub date): update power/status only.
             # No load_state (base_wh is unused when today_sums is None).
             before_names = st.auto_names
             updates, _ = plan(status, None, PluginState(), prev, st.config, max_step)
+            updates = updates + plan_harvi_updates(
+                harvis, st.unit_alloc, st.config.harvi_names, st.config.language
+            )
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
-            if st.auto_names != before_names:
+            if st.auto_names != before_names or alloc_changed:
                 saved = domoticz_api.load_state()
-                domoticz_api.save_state(replace(saved, auto_names=st.auto_names))
+                domoticz_api.save_state(
+                    replace(saved, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
+                )
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key

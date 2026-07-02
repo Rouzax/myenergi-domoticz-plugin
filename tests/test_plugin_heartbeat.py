@@ -29,7 +29,20 @@ class _FakeClient:
                         "pst": "A",
                     }
                 ]
-            }
+            },
+            {
+                "harvi": [
+                    {
+                        "sno": 19000001,
+                        "ectt1": "Generation",
+                        "ectp1": 100,
+                        "ectt2": "Generation",
+                        "ectp2": 100,
+                        "ectt3": "Generation",
+                        "ectp3": 50,
+                    }
+                ]
+            },
         ]
 
     def fetch_jday(self, letter, serial, iso_date):
@@ -111,6 +124,30 @@ def test_live_beat_persists_auto_names_on_device_creation():
     state_json = Domoticz.Configuration().get("state", "")
     assert state_json, "state must be written after device creation"
     auto_names = json.loads(state_json).get("auto_names", {})
-    assert set(auto_names.keys()) == {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"}
+    assert set(auto_names.keys()) == {
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "20",
+    }
     assert auto_names["1"] == "Solar Total"
     assert auto_names["4"] == "Zappi Mode"
+
+
+def test_heartbeat_creates_grid_and_harvi_devices():
+    _setup(counter_every=1)
+    plugin.onHeartbeat()  # beat 1 -> refresh
+    did = device_id(0)
+    units = Domoticz.Devices[did].Units
+    assert "10" in [str(k) for k in units] or 10 in units  # Grid Import
+    assert 11 in units  # Grid Export
+    assert 20 in units  # first harvi power device
+    assert units[20].sValue == "250"  # 100+100+50
