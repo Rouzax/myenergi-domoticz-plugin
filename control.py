@@ -158,6 +158,13 @@ def _setpoint_options(unit_label, vmin, vmax, step):
     }
 
 
+def boost_resting_level(zappi) -> int:
+    bsm = zappi.get("bsm") if isinstance(zappi, dict) else None
+    if not isinstance(bsm, int) or bsm == 0:
+        return 0
+    return 20 if bsm == 2 else 10
+
+
 def plan_control_updates(status, config, existing_units=frozenset()) -> "list[DeviceUpdate]":
     updates = []
     lang = config.language
@@ -174,6 +181,52 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                     nvalue=ZMO_TO_LEVEL[zmo],
                     svalue=str(ZMO_TO_LEVEL[zmo]),
                     switchtype=18,
+                )
+            )
+        rest = boost_resting_level(zappi)
+        updates.append(
+            DeviceUpdate(
+                unit=UNIT_BOOST,
+                type_name="Selector Switch",
+                options=_selector_options("boost", lang),
+                name=control_device_name("boost", lang),
+                nvalue=rest,
+                svalue=str(rest),
+                switchtype=18,
+            )
+        )
+        if UNIT_BOOST_KWH not in existing_units:
+            updates.append(
+                DeviceUpdate(
+                    unit=UNIT_BOOST_KWH,
+                    type_name="Setpoint",
+                    options=_setpoint_options("kWh", 0, MAX_KWH, 1),
+                    name=control_device_name("boost_kwh", lang),
+                    nvalue=0,
+                    svalue="0",
+                )
+            )
+        if UNIT_BOOST_TIME not in existing_units:
+            updates.append(
+                DeviceUpdate(
+                    unit=UNIT_BOOST_TIME,
+                    type_name="Setpoint",
+                    options=_setpoint_options("HHMM", 0, 2359, 15),
+                    name=control_device_name("boost_time", lang),
+                    nvalue=0,
+                    svalue="0",
+                )
+            )
+        mgl = zappi.get("mgl")
+        if isinstance(mgl, int):
+            updates.append(
+                DeviceUpdate(
+                    unit=UNIT_MIN_GREEN,
+                    type_name="Setpoint",
+                    options=_setpoint_options("%", 0, MAX_GREEN, 5),
+                    name=control_device_name("min_green", lang),
+                    nvalue=0,
+                    svalue=str(mgl),
                 )
             )
     if config.allow_lock and status.zappi_lck is not None:
