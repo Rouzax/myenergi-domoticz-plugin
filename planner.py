@@ -122,7 +122,13 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
     z = status.zappi
     lang = config.language
     gen, grd, div = _int(z.get("gen")), _int(z.get("grd")), _int(z.get("div"))
-    powers = {"solar": gen, "ev": div, "home": max(0, gen + grd - div)}
+    powers = {
+        "solar": gen,
+        "ev": div,
+        "home": max(0, gen + grd - div),
+        "grid_import": max(0, grd),
+        "grid_export": max(0, -grd),
+    }
 
     if today_sums is None:
         energies = {n: prev_counters.get(u, 0.0) for n, u in AGG_UNITS.items()}
@@ -169,5 +175,7 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
             0,
             f"{_float(z.get('frq')):.2f}",
         ),
+        _kwh(UNIT_GRID_IMPORT, "grid_import", powers["grid_import"], energies["grid_import"], lang),
+        _kwh(UNIT_GRID_EXPORT, "grid_export", powers["grid_export"], energies["grid_export"], lang),
     ]
     return updates, new_state

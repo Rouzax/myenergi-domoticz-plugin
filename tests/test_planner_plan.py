@@ -8,6 +8,8 @@ from planner import (
     UNIT_CHARGE_STATUS,
     UNIT_EV,
     UNIT_FREQUENCY,
+    UNIT_GRID_EXPORT,
+    UNIT_GRID_IMPORT,
     UNIT_HOME,
     UNIT_MODE,
     UNIT_PLUG,
@@ -79,3 +81,14 @@ def test_refresh_beat_sets_counter_from_base_plus_today():
     updates, _ = plan(STATUS, today, state, prev, CFG, max_step_wh=1e6)
     u = _by_unit(updates)
     assert u[UNIT_SOLAR].svalue == "1215;5000.0000"  # 4000 base + 1000 today
+
+
+def test_plan_emits_grid_import_export():
+    # fixture zappi: gen=1215, grd=734, div=0 -> import 734 W, export 0 W
+    state = PluginState(base_wh={}, last_processed_date="2026-07-01")
+    updates, _ = plan(STATUS, None, state, {}, CFG, max_step_wh=1e6)
+    u = _by_unit(updates)
+    assert u[UNIT_GRID_IMPORT].type_name == "kWh"
+    assert u[UNIT_GRID_IMPORT].options == {"EnergyMeterMode": "0"}
+    assert u[UNIT_GRID_IMPORT].svalue.startswith("734;")
+    assert u[UNIT_GRID_EXPORT].svalue.startswith("0;")

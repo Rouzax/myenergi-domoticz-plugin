@@ -102,7 +102,7 @@ def test_backfill_truncation_logs_and_caps_days():
 
 
 def test_live_beat_persists_auto_names_on_device_creation():
-    # A live beat that creates all 9 devices must persist auto_names ownership
+    # A live beat that creates all 11 devices must persist auto_names ownership
     # immediately so a crash cannot lose it before the next refresh writes state.
     _setup(counter_every=2, last_date="2026-07-01")
     plugin._state.beat = 2  # next beat = 3 -> live beat (not first, 3 % 2 != 0)
@@ -111,6 +111,6 @@ def test_live_beat_persists_auto_names_on_device_creation():
     state_json = Domoticz.Configuration().get("state", "")
     assert state_json, "state must be written after device creation"
     auto_names = json.loads(state_json).get("auto_names", {})
-    assert set(auto_names.keys()) == {"1", "2", "3", "4", "5", "6", "7", "8", "9"}
+    assert set(auto_names.keys()) == {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"}
     assert auto_names["1"] == "Solar Total"
     assert auto_names["4"] == "Zappi Mode"
