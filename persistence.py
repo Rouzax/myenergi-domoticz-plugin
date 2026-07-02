@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass, field
 
-STATE_VERSION = 1
+STATE_VERSION = 2
 
 
 @dataclass
@@ -21,16 +21,20 @@ class PluginState:
       device name. Used to detect renames and avoid overwriting user edits.
     - last_processed_date: hub-local date YYYY-MM-DD (or None) of the last
       day whose energy data was fully folded into base_wh.
+    - mode_text_hidden: whether the read-only Mode Text device has already
+      been hidden as a one-time step when charger control was first enabled.
     """
 
     last_processed_date: "str | None" = None
     unit_alloc: "dict[str, int]" = field(default_factory=dict)
     base_wh: "dict[str, float]" = field(default_factory=dict)
     auto_names: "dict[str, str]" = field(default_factory=dict)
+    mode_text_hidden: bool = False
 
 
 def migrate(raw: dict) -> dict:
     """Transform older payloads to current shape."""
+    raw.setdefault("mode_text_hidden", False)
     raw.setdefault("version", STATE_VERSION)
     return raw
 
@@ -44,6 +48,7 @@ def dumps(state: PluginState) -> str:
             "unit_alloc": state.unit_alloc,
             "base_wh": state.base_wh,
             "auto_names": state.auto_names,
+            "mode_text_hidden": state.mode_text_hidden,
         },
         separators=(",", ":"),
     )
@@ -59,4 +64,5 @@ def loads(text: str) -> PluginState:
         unit_alloc=raw.get("unit_alloc", {}),
         base_wh=raw.get("base_wh", {}),
         auto_names=raw.get("auto_names", {}),
+        mode_text_hidden=raw.get("mode_text_hidden", False),
     )

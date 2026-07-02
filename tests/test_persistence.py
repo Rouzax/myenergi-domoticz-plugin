@@ -28,3 +28,19 @@ def test_loads_tolerates_missing_keys():
     restored = loads(json.dumps({"version": 1, "base_wh": {"1": 10.0}}))
     assert restored.base_wh == {"1": 10.0}
     assert restored.unit_alloc == {}
+
+
+def test_mode_text_hidden_roundtrips():
+    st = PluginState(
+        last_processed_date="2026-07-01",
+        unit_alloc={},
+        base_wh={},
+        auto_names={},
+        mode_text_hidden=True,
+    )
+    assert loads(dumps(st)).mode_text_hidden is True
+
+
+def test_mode_text_hidden_defaults_false_on_old_state():
+    old = loads("")  # empty -> fresh default state
+    assert old.mode_text_hidden is False
