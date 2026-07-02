@@ -32,7 +32,7 @@ LCK_BITS = (
 def _finite(value) -> bool:
     try:
         return math.isfinite(float(value))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return False
 
 

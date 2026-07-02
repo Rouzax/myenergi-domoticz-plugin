@@ -43,3 +43,10 @@ def test_decode_lck_reports_bits():
 def test_zmo_level_maps_are_inverse():
     assert ZMO_TO_LEVEL[1] == 0
     assert ZMO_TO_LEVEL[4] == 30
+
+
+def test_validators_reject_oversized_int():
+    huge = 10**400
+    assert validate_kwh(huge) is None
+    assert validate_hhmm(huge) is None
+    assert clamp_min_green(huge) is None
