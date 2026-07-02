@@ -15,8 +15,8 @@ _NAMES = {
     "charge_status": {"English": "Charge Status", "Nederlands": "Laadstatus"},
     "plug_status": {"English": "Plug Status", "Nederlands": "Stekkerstatus"},
     "charge_added": {"English": "Charge Added", "Nederlands": "Toegevoegd laden"},
-    "voltage": {"English": "Supply Voltage", "Nederlands": "Netspanning"},
-    "frequency": {"English": "Supply Frequency", "Nederlands": "Netfrequentie"},
+    "voltage": {"English": "Grid Voltage", "Nederlands": "Netspanning"},
+    "frequency": {"English": "Grid Frequency", "Nederlands": "Netfrequentie"},
 }
 _ZMO = {
     1: {"English": "Fast", "Nederlands": "Snel"},

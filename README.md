@@ -24,8 +24,8 @@ Eleven fixed devices appear in Domoticz, plus one extra device per harvi:
 | 5 | Charge Status | Text | Current charge state |
 | 6 | Plug Status | Text | Current plug/connection state |
 | 7 | Charge Added | Custom (kWh) | Energy added in the current charging session |
-| 8 | Supply Voltage | Voltage (V) | Grid voltage |
-| 9 | Supply Frequency | Custom (Hz) | Grid frequency |
+| 8 | Grid Voltage | Voltage (V) | Grid/mains voltage |
+| 9 | Grid Frequency | Custom (Hz) | Grid/mains frequency |
 | 10 | Grid Import | kWh | Power drawn from the grid + cumulative counter |
 | 11 | Grid Export | kWh | Power fed back to the grid + cumulative counter; created as Domoticz "Return" type |
 | 20+ | one per harvi | Usage (W) or Custom (W) | Live power measured by each harvi (see below) |
