@@ -1,4 +1,11 @@
-from translations import charge_status, device_name, plug_status, zappi_mode
+from translations import (
+    charge_status,
+    control_device_name,
+    control_level_names,
+    device_name,
+    plug_status,
+    zappi_mode,
+)
 
 
 def test_device_name_en_nl_and_fallback():
@@ -25,3 +32,16 @@ def test_charge_status_idle_when_unplugged():
     assert charge_status(4, "A", "English") == "Idle"
     assert charge_status(4, "A", "Nederlands") == "Inactief"
     assert charge_status(1, "", "English") == "Paused"  # no plug info -> sta map
+
+
+def test_mode_level_names_english():
+    assert control_level_names("mode", "English") == "Fast|Eco|Eco+|Stopped"
+
+
+def test_boost_level_names_english():
+    assert control_level_names("boost", "English") == "Stop|Manual|Smart"
+
+
+def test_control_device_name_localised():
+    assert control_device_name("mode", "English") == "Charge Mode"
+    assert isinstance(control_device_name("lock_state", "Nederlands"), str)
