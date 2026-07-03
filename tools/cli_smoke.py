@@ -1,15 +1,20 @@
 """Manual smoke runner for the myenergi core (no Domoticz).
 
 Usage:
-    MYENERGI_SERIAL=xxxxxxxx MYENERGI_KEY=yyyy python cli_smoke.py
+    MYENERGI_SERIAL=xxxxxxxx MYENERGI_KEY=yyyy python tools/cli_smoke.py
 
-Prints discovered devices and today's kWh totals. Read-only.
+Prints discovered devices and today's kWh totals. Read-only. Dev-only tool; it
+lives outside the runtime root so it never ships in the plugin package.
 """
 
 import os
+import sys
+from pathlib import Path
 
-from model import joules_to_kwh, parse_jday, parse_jstatus
-from myenergi_client import MyEnergiClient
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from model import joules_to_kwh, parse_jday, parse_jstatus  # noqa: E402
+from myenergi_client import MyEnergiClient  # noqa: E402
 
 
 def main():
