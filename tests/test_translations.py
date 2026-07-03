@@ -48,6 +48,15 @@ def test_boost_level_names_nederlands():
 
 def test_control_device_name_localised():
     assert control_device_name("mode", "English") == "Charge Mode"
-    assert control_device_name("boost", "English") == "Boost Settings"
-    assert control_device_name("boost", "Nederlands") == "Boost Instellingen"
+    assert control_device_name("boost", "English") == "Boost"
+    assert control_device_name("boost", "Nederlands") == "Boost"
     assert isinstance(control_device_name("lock_state", "Nederlands"), str)
+
+
+def test_control_titles_grouped_scheme():
+    assert control_device_name("boost", "English") == "Boost"
+    assert control_device_name("boost_kwh", "English") == "Boost - Add kWh"
+    assert control_device_name("boost_time", "English") == "Boost - Ready By"
+    assert control_device_name("min_green", "English") == "Eco+ Min Green %"
+    assert control_device_name("boost_kwh", "Nederlands") == "Boost - kWh toevoegen"
+    assert control_device_name("min_green", "Nederlands") == "Eco+ Min Groen %"

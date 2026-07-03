@@ -30,10 +30,10 @@ _CONTROL_LEVELS = {
 }
 _CONTROL_NAMES = {
     "mode": {"English": "Charge Mode", "Nederlands": "Laadmodus"},
-    "boost": {"English": "Boost Settings", "Nederlands": "Boost Instellingen"},
-    "boost_kwh": {"English": "Boost kWh", "Nederlands": "Boost kWh"},
-    "boost_time": {"English": "Boost Complete By", "Nederlands": "Boost Klaar Om"},
-    "min_green": {"English": "Min Green Level", "Nederlands": "Min Groen Niveau"},
+    "boost": {"English": "Boost", "Nederlands": "Boost"},
+    "boost_kwh": {"English": "Boost - Add kWh", "Nederlands": "Boost - kWh toevoegen"},
+    "boost_time": {"English": "Boost - Ready By", "Nederlands": "Boost - Klaar om"},
+    "min_green": {"English": "Eco+ Min Green %", "Nederlands": "Eco+ Min Groen %"},
     "lock_state": {"English": "Charger Lock State", "Nederlands": "Lader Vergrendelstatus"},
 }
 _ZMO = {
