@@ -150,3 +150,63 @@ def test_activate_idempotent_skips_update_when_already_visible():
 def test_activate_missing_unit_is_noop():
     did = device_id(1)
     activate_units(Domoticz.Devices, did, [99])  # must not raise
+
+
+def test_create_logs_lifecycle_event():
+    did = device_id(7)
+    apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "10;1.0")], {})
+    assert any("device_create unit=1" in m and "Solar Total" in m for m in Domoticz._log)
+
+
+def test_rename_logs_lifecycle_event():
+    did = device_id(7)
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "10;1.0")], {})
+    Domoticz._log.clear()
+    apply_updates(Domoticz.Devices, did, [_u(1, "Zonne-opbrengst totaal", "10;1.0")], names)
+    assert any(
+        "device_rename unit=1" in m and "Solar Total" in m and "Zonne-opbrengst totaal" in m
+        for m in Domoticz._log
+    )
+
+
+def test_hide_logs_lifecycle_event():
+    did = device_id(1)
+    apply_updates(Domoticz.Devices, did, [_u(4, "Zappi Mode", "Eco", tn="Text", opts={})], {})
+    Domoticz._log.clear()
+    deactivate_units(Domoticz.Devices, did, [4])
+    assert any("device_hide unit=4" in m for m in Domoticz._log)
+
+
+def test_show_logs_lifecycle_event():
+    did = device_id(1)
+    apply_updates(
+        Domoticz.Devices, did, [_u(12, "Charge Mode", "0", tn="Selector Switch", opts={})], {}
+    )
+    Domoticz.Devices[did].Units[12].Used = 0
+    Domoticz._log.clear()
+    activate_units(Domoticz.Devices, did, [12])
+    assert any("device_show unit=12" in m for m in Domoticz._log)
+
+
+def test_idempotent_hide_does_not_log():
+    did = device_id(1)
+    apply_updates(Domoticz.Devices, did, [_u(4, "Zappi Mode", "Eco", tn="Text", opts={})], {})
+    Domoticz.Devices[did].Units[4].Used = 0
+    Domoticz._log.clear()
+    deactivate_units(Domoticz.Devices, did, [4])  # already hidden, no flip
+    assert not any("device_hide" in m for m in Domoticz._log)
+
+
+def test_apply_summary_reports_created_and_renamed_counts():
+    did = device_id(7)
+    names = apply_updates(Domoticz.Devices, did, [_u(1, "Solar Total", "10;1.0")], {})
+    assert any(m == "apply units=1 created=1 renamed=0" for m in Domoticz._log)
+    Domoticz._log.clear()
+    apply_updates(Domoticz.Devices, did, [_u(1, "Zonne-opbrengst totaal", "20;2.0")], names)
+    assert any(m == "apply units=1 created=0 renamed=1" for m in Domoticz._log)
+
+
+def test_empty_apply_logs_no_summary():
+    did = device_id(7)
+    apply_updates(Domoticz.Devices, did, [], {})
+    assert not any(m.startswith("apply units=") for m in Domoticz._log)

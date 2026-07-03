@@ -314,7 +314,6 @@ def onHeartbeat():
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
-            Domoticz.Debug(f"apply units={len(updates)}")
             state = replace(state, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
             domoticz_api.save_state(state)
         else:
@@ -326,7 +325,6 @@ def onHeartbeat():
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
-            Domoticz.Debug(f"apply units={len(updates)}")
             if st.auto_names != before_names or alloc_changed:
                 domoticz_api.save_state(_persist_state(st))
 
