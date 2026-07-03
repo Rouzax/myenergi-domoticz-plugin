@@ -16,7 +16,7 @@ solar generation, EV charging, derived home consumption, grid import/export, and
 power as real kWh counters that survive Domoticz restarts, plus **opt-in** charger control. It is
 **read-only by default** - control is off unless you explicitly enable it.
 
-_Screenshot of the Domoticz devices goes here._
+![The myenergi monitoring devices in Domoticz: solar, home, EV, grid, and per-inverter power](docs/assets/devices-overview.png)
 
 ## Features
 
@@ -30,6 +30,10 @@ _Screenshot of the Domoticz devices goes here._
 | **Persistent counters** | Rebuilt from myenergi's per-minute history; monotonic and restart-proof. |
 | **Opt-in charger control** | Charge mode, boost (kWh + ready-by), and Eco+ min-green - off by default. |
 | **English + Nederlands** | Device names and status text in either language. |
+
+With **Allow Control** enabled, the charger control devices appear as interactive switches:
+
+![Charger control devices in Domoticz: charge mode, boost, and Eco+ minimum green](docs/assets/control-devices.png)
 
 ## Requirements
 
