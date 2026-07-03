@@ -63,6 +63,26 @@ def apply_updates(devices, dev_id, updates, auto_names) -> dict:
     return names
 
 
+def sync_names(devices, dev_id, expected_names, auto_names) -> dict:
+    """Rename owned units to their expected (language-specific) name, name only.
+
+    Value reconciliation stays in apply_updates; this keeps device names following a
+    language change even for input-only units that are never re-emitted. Respects a
+    user's manual rename via auto_names ownership.
+    """
+    names = dict(auto_names)
+    for unit, want in expected_names.items():
+        existing = _existing_unit(devices, dev_id, unit)
+        if existing is None:
+            continue
+        if existing.Name == names.get(str(unit)) and existing.Name != want:
+            Domoticz.Debug(f"device_rename unit={unit} from={existing.Name!r} to={want!r}")
+            existing.Name = want
+            existing.Update(Log=False, UpdateProperties=True)
+            names[str(unit)] = want
+    return names
+
+
 def deactivate_units(devices, dev_id, units) -> None:
     for unit in units:
         existing = _existing_unit(devices, dev_id, unit)

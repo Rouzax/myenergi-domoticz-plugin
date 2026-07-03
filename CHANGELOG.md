@@ -12,6 +12,9 @@ All notable changes to this project are documented here. The format is based on
   Boost Ready-By, Min Green, Charger Lock State) are now shown or hidden only once on the
   Allow Control on/off transition, instead of being re-forced visible on every heartbeat, so
   unchecking "Used" on a control device (for example Charger Lock State) now sticks.
+- Re-translate control device names on a language switch. Control names (including the input-only
+  Boost kWh and Boost Ready-By, which are not re-emitted after creation) now follow the Language
+  setting, matching the monitoring devices. User-renamed control devices are still left untouched.
 
 ## [1.0.1] - 2026-07-03
 

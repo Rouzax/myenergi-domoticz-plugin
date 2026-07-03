@@ -17,6 +17,17 @@ UNIT_BOOST_TIME = 15
 UNIT_MIN_GREEN = 16
 UNIT_LOCK_STATE = 18
 
+# Control unit -> translation key, so device names can be resynced to the language
+# independently of value reconciliation (input-only units are not re-emitted).
+_UNIT_NAME_KEYS = {
+    UNIT_MODE: "mode",
+    UNIT_BOOST: "boost",
+    UNIT_BOOST_KWH: "boost_kwh",
+    UNIT_BOOST_TIME: "boost_time",
+    UNIT_MIN_GREEN: "min_green",
+    UNIT_LOCK_STATE: "lock_state",
+}
+
 MODE_LEVELS = {10: 1, 20: 2, 30: 3, 40: 4}
 ZMO_TO_LEVEL = {1: 10, 2: 20, 3: 30, 4: 40}
 
@@ -275,6 +286,11 @@ def boost_resting_level(zappi) -> int:
     if isinstance(bsm, int) and not isinstance(bsm, bool) and bsm == 1:
         return 10
     return 0
+
+
+def control_unit_names(language) -> "dict[int, str]":
+    """Expected control device name per unit for the given language."""
+    return {unit: control_device_name(key, language) for unit, key in _UNIT_NAME_KEYS.items()}
 
 
 def plan_control_updates(status, config, existing_units=frozenset()) -> "list[DeviceUpdate]":

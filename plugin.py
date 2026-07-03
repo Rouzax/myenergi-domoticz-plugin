@@ -401,6 +401,12 @@ def _reconcile_control(st, devices, did, status, now):
         devices, did, control_updates, st.reconcile_suppress, now
     )
     st.auto_names = domoticz_api.apply_updates(devices, did, control_updates, st.auto_names)
+    if st.config.allow_control:
+        # Keep control device names following the language even for input-only units
+        # (Boost kWh/Ready-By) that plan_control_updates never re-emits after creation.
+        st.auto_names = domoticz_api.sync_names(
+            devices, did, control.control_unit_names(st.config.language), st.auto_names
+        )
 
     dev = devices.get(did)
     mode_text_exists = dev is not None and UNIT_MODE_TEXT in dev.Units

@@ -247,6 +247,24 @@ def test_heartbeat_reshows_control_devices_on_off_then_on_toggle():
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 1
 
 
+def test_control_device_name_translates_on_language_switch():
+    # A language switch must re-translate a control device name even when its value
+    # is unchanged: the no-op filter drops value-unchanged updates, but an owned
+    # rename must still go through.
+    st = _setup(counter_every=1, allow_control=True)  # English
+    plugin.onHeartbeat()  # creates control devices with English names
+    did = device_id(0)
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].Name == "Charge Mode"
+
+    assert Domoticz.Devices[did].Units[control.UNIT_BOOST_KWH].Name == "Boost - Add kWh"
+
+    st.config.language = "Nederlands"
+    plugin.onHeartbeat()  # zmo unchanged -> only the name should change
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].Name == "Laadmodus"
+    # Input-only unit (never re-emitted after creation) must still re-translate.
+    assert Domoticz.Devices[did].Units[control.UNIT_BOOST_KWH].Name == "Boost - kWh toevoegen"
+
+
 def test_reconcile_suppression_skips_units_with_future_deadline():
     class _ModeClient(_FakeClient):
         def __init__(self):
