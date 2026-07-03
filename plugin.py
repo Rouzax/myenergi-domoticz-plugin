@@ -180,6 +180,7 @@ def onStart():
     except Exception as exc:  # noqa: BLE001 - never let onStart crash the framework
         domoticz_api.log_redacted(Domoticz.Error, f"myenergi discovery failed: {exc}", cfg.api_key)
         _state.discovery_failing = True
+    _initial_control_reconcile(_state)
 
 
 def onStop():
@@ -417,6 +418,27 @@ def _reconcile_control(st, devices, did, status, now):
 
     if st.auto_names != before_names or st.mode_text_hidden != before_hidden:
         domoticz_api.save_state(_persist_state(st))
+
+
+def _initial_control_reconcile(st):
+    try:
+        if st.client is None or st.client.base_url is None:
+            return
+        devices = globals().get("Devices")
+        if devices is None:
+            return
+        status = parse_jstatus(st.client.fetch_status())
+        if not status.zappi:
+            return
+        did = domoticz_api.device_id(_hardware_id())
+        _reconcile_control(st, devices, did, status, time.monotonic())
+        Domoticz.Debug("onStart control reconcile applied")
+    except Exception as exc:  # noqa: BLE001 - onStart must never crash the framework
+        domoticz_api.log_redacted(
+            Domoticz.Error,
+            f"myenergi onStart control reconcile failed: {exc}",
+            st.config.api_key,
+        )
 
 
 def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803

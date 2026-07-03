@@ -1,6 +1,8 @@
 import Domoticz
 
+import control
 import plugin
+from domoticz_api import device_id
 
 
 def test_onstart_sets_heartbeat_and_config(monkeypatch):
@@ -99,3 +101,83 @@ def test_onstart_discovery_failure_sets_discovery_failing(monkeypatch):
     }
     plugin.onStart()
     assert plugin._state.discovery_failing is True
+
+
+class _ReconcileClient:
+    def __init__(self, serial, api_key, writes_enabled=False, **kw):
+        self.base_url = "https://s18.myenergi.net"
+
+    def discover_from_director(self):
+        return "s18.myenergi.net"
+
+    def fetch_status(self):
+        return [
+            {
+                "zappi": [
+                    {
+                        "sno": 20000002,
+                        "zmo": 1,
+                        "mgl": 50,
+                        "lck": 16,
+                        "gen": 0,
+                        "grd": 0,
+                        "div": 0,
+                        "pst": "A",
+                        "sta": 1,
+                    }
+                ]
+            }
+        ]
+
+
+def _params(allow):
+    return {"Username": "20000002", "ApiKey": "k", "AllowControl": allow}
+
+
+def test_onstart_creates_control_devices_when_enabled(monkeypatch):
+    monkeypatch.setattr(plugin, "MyEnergiClient", _ReconcileClient)
+    plugin.Parameters = _params("true")
+    plugin.onStart()
+    units = Domoticz.Devices[device_id(0)].Units
+    assert control.UNIT_MODE in units and units[control.UNIT_MODE].Used == 1
+    assert control.UNIT_BOOST in units and control.UNIT_MIN_GREEN in units
+    # unit 4 (energy Zappi Mode text) is not created on onStart, so the hide defers
+    assert plugin._state.mode_text_hidden is False
+
+
+def test_onstart_hides_mode_text_when_unit4_present(monkeypatch):
+    monkeypatch.setattr(plugin, "MyEnergiClient", _ReconcileClient)
+    plugin.Parameters = _params("true")
+    # Simulate a restart where the energy Zappi Mode text device already exists and is
+    # visible. Unit(...).Create() auto-creates the device in the stub.
+    did = device_id(0)
+    Domoticz.Unit(Name="Zappi Mode", DeviceID=did, Unit=4, TypeName="Text", Used=1).Create()
+    plugin.onStart()
+    assert Domoticz.Devices[did].Units[4].Used == 0
+    assert plugin._state.mode_text_hidden is True
+
+
+def test_onstart_hides_control_when_disabled(monkeypatch):
+    monkeypatch.setattr(plugin, "MyEnergiClient", _ReconcileClient)
+    plugin.Parameters = _params("false")
+    # Model a restart where control devices already exist and are visible from a
+    # prior run with AllowControl on; plan_control_updates emits nothing while
+    # disabled, so onStart must rely on the deactivate path to hide them.
+    did = device_id(0)
+    for u in plugin.CONTROL_UNITS:
+        Domoticz.Unit(Name="x", DeviceID=did, Unit=u, TypeName="Selector Switch", Used=1).Create()
+    plugin.onStart()
+    units = Domoticz.Devices[did].Units
+    for u in plugin.CONTROL_UNITS:
+        assert units[u].Used == 0
+
+
+def test_onstart_fetch_status_failure_does_not_raise(monkeypatch):
+    class _BadFetch(_ReconcileClient):
+        def fetch_status(self):
+            raise ConnectionError("boom")
+
+    monkeypatch.setattr(plugin, "MyEnergiClient", _BadFetch)
+    plugin.Parameters = _params("true")
+    plugin.onStart()  # must not raise
+    assert any("onStart control reconcile failed" in m for m in Domoticz._log)
