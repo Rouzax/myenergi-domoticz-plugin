@@ -403,3 +403,28 @@ def test_discovery_recovers_and_clears_backoff():
     assert plugin._state.discovery_failing is False
     assert plugin._state.discovery_backoff_ts == 0.0
     assert any("recovered" in line for line in Domoticz._log)
+
+
+def test_heartbeat_reconciles_control_when_enabled():
+    _setup(counter_every=1, allow_control=True)
+    plugin.onHeartbeat()  # beat 1 (refresh): creates energy + control devices
+    did = device_id(0)
+    units = Domoticz.Devices[did].Units
+    # control devices created and shown
+    assert control.UNIT_MODE in units and units[control.UNIT_MODE].Used == 1
+    assert control.UNIT_BOOST in units
+    # one-time Zappi Mode text (unit 4) hidden, flag set
+    assert units[4].Used == 0
+    assert plugin._state.mode_text_hidden is True
+
+
+def test_heartbeat_hides_control_when_disabled():
+    _setup(counter_every=1, allow_control=False)
+    plugin.onHeartbeat()
+    did = device_id(0)
+    units = Domoticz.Devices[did].Units
+    for u in plugin.CONTROL_UNITS:
+        if u in units:
+            assert units[u].Used == 0
+    # Zappi Mode text stays visible when control is off
+    assert units[4].Used == 1

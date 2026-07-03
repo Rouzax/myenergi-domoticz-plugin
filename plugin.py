@@ -94,6 +94,8 @@ CONTROL_UNITS = (
     control.UNIT_LOCK_STATE,
 )
 
+UNIT_MODE_TEXT = 4  # Zappi Mode read-only text; hidden once while control is enabled.
+
 # Debug Level -> Domoticz.Debugging() bitmask. 2 = Python-only (this plugin's own
 # Domoticz.Debug lines); 1 = All (adds framework internals). 0 = off.
 _DEBUG_MASK = {0: 0, 1: 2, 2: 1}
@@ -286,19 +288,7 @@ def onHeartbeat():
         hub_date = _hub_date(status.zappi) if is_refresh else None
         Domoticz.Debug(f"heartbeat beat={st.beat} refresh={is_refresh} hub_date={hub_date}")
 
-        # Control reconcile runs on every heartbeat (live cadence), not just the
-        # counter refresh, so external/app changes to mode/boost/min-green/lock
-        # reflect within one live poll. The no-op filter keeps DB churn near zero
-        # for near-static control widgets: only a value that actually changed
-        # (and is not under reconcile-suppression from a just-issued command) is
-        # applied.
         now = time.monotonic()
-        control_updates = control.plan_control_updates(
-            status, st.config, _existing_units(devices, did)
-        )
-        control_updates = _filter_control_updates(
-            devices, did, control_updates, st.reconcile_suppress, now
-        )
 
         if is_refresh and hub_date:
             state = domoticz_api.load_state()
@@ -322,15 +312,10 @@ def onHeartbeat():
             updates = updates + plan_harvi_updates(
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
-            updates = updates + control_updates
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
             Domoticz.Debug(f"apply units={len(updates)}")
             state = replace(state, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
             domoticz_api.save_state(state)
-            if st.config.allow_control and not st.mode_text_hidden:
-                domoticz_api.deactivate_units(devices, did, [4])
-                st.mode_text_hidden = True
-                domoticz_api.save_state(_persist_state(st))
         else:
             # Live beat (or refresh with no hub date): update power/status only.
             # No load_state (base_wh is unused when today_sums is None).
@@ -339,20 +324,12 @@ def onHeartbeat():
             updates = updates + plan_harvi_updates(
                 harvis, st.unit_alloc, st.config.harvi_names, st.config.language
             )
-            updates = updates + control_updates
             st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
             Domoticz.Debug(f"apply units={len(updates)}")
             if st.auto_names != before_names or alloc_changed:
                 domoticz_api.save_state(_persist_state(st))
 
-        if st.config.allow_control:
-            domoticz_api.activate_units(devices, did, CONTROL_UNITS)
-        else:
-            domoticz_api.deactivate_units(devices, did, CONTROL_UNITS)
-            if st.mode_text_hidden:
-                domoticz_api.activate_units(devices, did, [4])
-                st.mode_text_hidden = False
-                domoticz_api.save_state(_persist_state(st))
+        _reconcile_control(st, devices, did, status, now)
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
@@ -411,6 +388,35 @@ def _filter_control_updates(devices, did, updates, reconcile_suppress, now):
             continue
         kept.append(u)
     return kept
+
+
+def _reconcile_control(st, devices, did, status, now):
+    before_names = st.auto_names
+    before_hidden = st.mode_text_hidden
+    control_updates = control.plan_control_updates(status, st.config, _existing_units(devices, did))
+    control_updates = _filter_control_updates(
+        devices, did, control_updates, st.reconcile_suppress, now
+    )
+    st.auto_names = domoticz_api.apply_updates(devices, did, control_updates, st.auto_names)
+
+    dev = devices.get(did)
+    mode_text_exists = dev is not None and UNIT_MODE_TEXT in dev.Units
+
+    if st.config.allow_control:
+        # Defer the one-time hide until unit 4 exists (energy path creates it on the
+        # first heartbeat); setting the flag before it exists would suppress it forever.
+        if not st.mode_text_hidden and mode_text_exists:
+            domoticz_api.deactivate_units(devices, did, [UNIT_MODE_TEXT])
+            st.mode_text_hidden = True
+        domoticz_api.activate_units(devices, did, CONTROL_UNITS)
+    else:
+        domoticz_api.deactivate_units(devices, did, CONTROL_UNITS)
+        if st.mode_text_hidden:
+            domoticz_api.activate_units(devices, did, [UNIT_MODE_TEXT])
+            st.mode_text_hidden = False
+
+    if st.auto_names != before_names or st.mode_text_hidden != before_hidden:
+        domoticz_api.save_state(_persist_state(st))
 
 
 def onCommand(DeviceID, Unit, Command, Level, Color):  # noqa: N803
