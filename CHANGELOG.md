@@ -1,0 +1,29 @@
+# Changelog
+
+All notable changes to this project are documented here. The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-07-03
+
+Initial public release.
+
+### Added
+
+- **Monitoring devices** (read-only): Solar Total, Home Consumption, EV Charging, Zappi Mode,
+  Charge Status, Plug Status, Charge Added, Grid Voltage, Grid Frequency, Grid Import, Grid Export.
+- **Real cumulative kWh counters** rebuilt from myenergi's per-minute history: monotonic,
+  accumulate-from-install, restart-proof, with up to 14 days of backfill.
+- **Per-inverter (harvi) power** devices, one per harvi, auto-styled for generation (sun icon) vs
+  battery/load (signed), with optional friendly-name slots.
+- **Opt-in charger control** (`Allow Control`, off by default): Charge Mode and Boost selectors,
+  Boost kWh + Ready-By and Eco+ Min Green as dropdown menus, and a read-only Charger Lock State.
+  The control surface is created and reconciled immediately on plugin start.
+- **English and Nederlands** device names and status text.
+- **Verbose device-lifecycle logging** (create / rename / show / hide) at the Verbose debug level.
+- Documentation site (MkDocs Material, WCAG 2.1 AA) and a lean `dist` install branch.
+
+### Security
+
+- Charger control is off by default; the plugin is read-only until `Allow Control` is enabled.
+- The API key is redacted from logs and never written to device fields.
