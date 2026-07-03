@@ -9,7 +9,7 @@ def test_mode_level_optimistic_update():
     assert update.type_name == "Selector Switch"
     assert update.image == 30
     assert update.options["LevelOffHidden"] == "true"
-    assert update.options["LevelNames"] == "Off|Fast|Eco|Eco+|Stopped"
+    assert update.options["LevelNames"] == "Off|Fast|Eco|Eco+|Stop"
     assert update.options["LevelActions"] == "||||"
 
 

@@ -20,8 +20,8 @@ _NAMES = {
 }
 _CONTROL_LEVELS = {
     "mode": {
-        "English": "Fast|Eco|Eco+|Stopped",
-        "Nederlands": "Snel|Eco|Eco+|Gestopt",
+        "English": "Fast|Eco|Eco+|Stop",
+        "Nederlands": "Snel|Eco|Eco+|Stop",
     },
     "boost": {
         "English": "Manual|Smart|Stop All",
@@ -40,7 +40,7 @@ _ZMO = {
     1: {"English": "Fast", "Nederlands": "Snel"},
     2: {"English": "Eco", "Nederlands": "Eco"},
     3: {"English": "Eco+", "Nederlands": "Eco+"},
-    4: {"English": "Stopped", "Nederlands": "Gestopt"},
+    4: {"English": "Stop", "Nederlands": "Stop"},
 }
 _STA = {
     1: {"English": "Paused", "Nederlands": "Gepauzeerd"},

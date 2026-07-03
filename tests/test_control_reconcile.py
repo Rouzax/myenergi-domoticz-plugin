@@ -53,7 +53,7 @@ def test_mode_and_boost_hide_level_zero_slot():
     status = _status(zappi={"zmo": 1, "bsm": 0})
     updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
     assert updates[UNIT_MODE].options["LevelOffHidden"] == "true"
-    assert updates[UNIT_MODE].options["LevelNames"] == "Off|Fast|Eco|Eco+|Stopped"
+    assert updates[UNIT_MODE].options["LevelNames"] == "Off|Fast|Eco|Eco+|Stop"
     assert updates[UNIT_BOOST].options["LevelOffHidden"] == "true"
     assert updates[UNIT_BOOST].options["LevelNames"] == "Off|Manual|Smart|Stop All"
 

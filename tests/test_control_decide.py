@@ -14,7 +14,7 @@ def test_mode_selector_maps_level_to_zmo():
     intent = decide_write(UNIT_MODE, "Set Level", 10, {})
     assert intent.kind == "mode"
     assert intent.mode == 1  # Fast
-    assert decide_write(UNIT_MODE, "Set Level", 40, {}).mode == 4  # Stopped
+    assert decide_write(UNIT_MODE, "Set Level", 40, {}).mode == 4  # Stop
 
 
 def test_mode_unknown_level_is_none():

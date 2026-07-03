@@ -35,7 +35,7 @@ def test_charge_status_idle_when_unplugged():
 
 
 def test_mode_level_names_english():
-    assert control_level_names("mode", "English") == "Fast|Eco|Eco+|Stopped"
+    assert control_level_names("mode", "English") == "Fast|Eco|Eco+|Stop"
 
 
 def test_boost_level_names_english():

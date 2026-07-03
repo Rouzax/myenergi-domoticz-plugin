@@ -77,7 +77,7 @@ def _mode_unit(st):
 
 def test_oncommand_optimistic_apply_on_success():
     st = _setup()
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 40, "")  # Stopped
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 40, "")  # Stop
     assert _mode_unit(st).nValue == 40
 
 
@@ -106,7 +106,7 @@ def test_oncommand_optimistic_value_persists_no_confirm_fetch():
     st.client = _StaleStatusClient()
     st.zappi_serial = "10000001"
 
-    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 40, "")  # Stopped
+    plugin.onCommand("myenergi_hub1", UNIT_MODE, "Set Level", 40, "")  # Stop
 
     assert _mode_unit(st).nValue == 40
     assert st.client.fetch_status_called is False
