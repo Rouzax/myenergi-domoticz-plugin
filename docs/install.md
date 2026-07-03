@@ -19,15 +19,28 @@ Before you start, make sure you have:
 
 ## Step 1: Install the plugin
 
-Clone the plugin's `dist` branch into your Domoticz plugins directory. The `dist` branch
-contains only the runtime files needed to run the plugin.
+Pick whichever way suits you. Both put the plugin at `.../domoticz/plugins/myenergi/plugin.py`.
 
-```bash
-cd /opt/domoticz/plugins            # adjust to your Domoticz install path
-git clone -b dist https://github.com/Rouzax/myenergi-domoticz-plugin myenergi
-```
+=== "Git (easy updates)"
 
-This creates `.../domoticz/plugins/myenergi/plugin.py` and its supporting files.
+    Clone the `dist` branch (it holds only the files needed to run the plugin) into your Domoticz
+    plugins directory:
+
+    ```bash
+    cd /opt/domoticz/plugins            # adjust to your Domoticz install path
+    git clone -b dist https://github.com/Rouzax/myenergi-domoticz-plugin myenergi
+    ```
+
+    To update later: `cd myenergi && git pull`.
+
+=== "Download (no git)"
+
+    1. Open the [Releases page](https://github.com/Rouzax/myenergi-domoticz-plugin/releases) and
+       download the `myenergi-vX.Y.Z.zip` file from the latest release.
+    2. Unzip it into your Domoticz plugins directory. The zip contains a `myenergi` folder, so you
+       end up with `.../domoticz/plugins/myenergi/plugin.py`.
+
+    To update later: download the newer zip and replace the folder.
 
 ## Step 2: Restart Domoticz
 
