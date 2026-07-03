@@ -44,11 +44,20 @@ EV charging. It is intentionally floored at zero and can genuinely read 0 for a 
 particularly around export-only periods when the subtraction nets out at or below zero. This is
 expected behavior, not a bug. See [How it works](internals.md#live-power) for the exact formula.
 
+The myenergi app shows house consumption the same way: derived from site generation and grid
+flow, minus what the devices diverted, rather than measured with its own house meter. Brief 0
+readings around export-only moments are expected there too, not just in this plugin.
+
 ## A kWh counter looks wrong after a restart, or after installing the plugin
 
-- Counters do **not** start at zero on install. They seed from whatever the myenergi-reported
-  values already show at that point, then build forward from myenergi's own per-minute history.
-  See [Accumulate-from-install](internals.md#accumulate-from-install).
+- Counters **do** start low, near zero, on a fresh install. This is expected, not a bug: the
+  plugin has no way to import your myenergi device's lifetime energy total, and would not want to
+  even if it could, since dropping a large lifetime figure into a Domoticz counter in one step
+  would spike the charts. Instead, on install the plugin seeds each counter's baseline from the
+  device's current cumulative value (zero on a brand-new device) minus today's energy so far,
+  clamped so it never goes below zero, then builds forward from myenergi's own per-minute
+  history. In practice a fresh install starts near today's accumulated energy and climbs from
+  there. See [Accumulate-from-install](internals.md#accumulate-from-install).
 - Counters never decrease and never jump by an implausible amount in one refresh (bounded by the
   **Max System Power (kW)** setting). An implausible jump is held back and retried on the next
   refresh rather than applied, so a brief "stuck" value after an unusual event is expected, not a

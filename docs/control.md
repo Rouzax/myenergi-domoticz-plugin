@@ -5,9 +5,10 @@ on the hardware page (see [Settings](settings.md)) if you want to change the zap
 start or cancel a boost, or change the Eco+ minimum green percentage from Domoticz.
 
 !!! warning "Read this before you enable it"
-    Once Allow Control is on, any Domoticz user, scene, timer, or API client with access to this
-    hardware can command your charger. There is no separate permission inside the plugin: Allow
-    Control is a single, all-or-nothing switch. See [Security](security.md).
+    Turning Allow Control on makes the control devices below writable in Domoticz, and lets the
+    plugin send commands to your charger. The plugin itself has no separate per-user permission;
+    use Domoticz's own per-user device access controls to limit which Domoticz users can see and
+    operate these devices. See [Security](security.md).
 
 ## When the control devices appear
 
@@ -64,11 +65,6 @@ directly.
 The possible flags are: **Locked Now**, **EV Plugged**, **EV Unplugged**, **Charge**, and
 **Charge session allowed**. If none apply, the device shows `(none)`. This device is read-only;
 there is no supported way to change the physical lock state from Domoticz.
-
-!!! note "Lock control was intentionally left out"
-    An earlier design considered a writable lock switch, but the myenergi write endpoint's
-    effect on the physical lock could not be reliably verified against hardware, so it was
-    dropped. Only the read-only status is exposed.
 
 ## Repeated commands are debounced
 

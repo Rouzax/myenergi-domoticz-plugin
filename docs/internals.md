@@ -42,11 +42,18 @@ for the day.
 
 ### Accumulate-from-install
 
-There is no way to fetch a myenergi device's full lifetime energy total, so counters start from
-whatever the device already reads when the plugin is first installed, not from zero and not from
-a full history import. On first run, the plugin seeds each counter's internal baseline as
-`(current counter value) − (today's energy so far)`, so the counter continues smoothly from where
-the device already was instead of jumping or resetting.
+The plugin does not import a myenergi device's lifetime energy total. There is no way to fetch
+one from the API, and even if there were, dropping a large lifetime figure into a Domoticz
+counter in one step would spike the charts. Instead, counters start low, at or near zero, on a
+fresh install and build forward from there.
+
+On first run, the plugin seeds each counter's internal baseline as
+`max(0, current Domoticz device value − today's energy so far)`. On a brand-new device the
+current value is zero, so the baseline clamps to zero and the counter starts at roughly today's
+accumulated energy, then grows on each subsequent refresh. It is normal for a freshly installed
+counter to read low, or even zero, at first. On a restart of an existing install (not a fresh
+device), the same formula lets the counter continue smoothly from where it already was instead of
+jumping or resetting.
 
 ### Monotonic and clamped
 

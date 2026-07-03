@@ -15,7 +15,7 @@ below.
 
 | Setting | Options | Default | What it does |
 |---|---|---|---|
-| Allow Control | No / Yes | **No** | Turns on the charger control devices (charge mode, boost, min-green). Off by default: the plugin stays read-only until you turn this on. Once enabled, any Domoticz user, scene, timer, or API client with access to this hardware can command the charger. See [Charger control](control.md). |
+| Allow Control | No / Yes | **No** | Turns on the charger control devices (charge mode, boost, min-green). Off by default: the plugin stays read-only until you turn this on. Once enabled, the control devices become writable in Domoticz; use Domoticz's own per-user device permissions to control which Domoticz users can operate them. See [Charger control](control.md). |
 
 ## Language
 

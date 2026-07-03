@@ -23,8 +23,8 @@ in **cleartext**, not encrypted or hashed.
 This plugin's own **Allow Control** setting is a separate safeguard, off by default. With it off,
 the plugin only reads data and never sends a command to your charger, even though the API key it
 holds is technically capable of it. See [Charger control](control.md) for what changes once you
-turn it on, and note that once it is on, control is available to anyone who can command that
-Domoticz hardware, not just you.
+turn it on. Turning it on makes the control devices writable in Domoticz; use Domoticz's own
+per-user device permissions if you want to limit which Domoticz users can operate them.
 
 ## If the key is exposed
 
@@ -52,7 +52,8 @@ Do this as soon as you suspect exposure; there is no way to know who else has us
 - Keep Domoticz itself behind authentication if it is reachable from outside your home network;
   this plugin relies on Domoticz's own access control for who can view or command its devices.
 - Only turn on **Allow Control** if you actually want charger control available from Domoticz,
-  and understand that anyone with access to that hardware's devices can then use it.
+  and set Domoticz's per-user device permissions on the control devices if you want to limit
+  which Domoticz users can operate them.
 
 ## See also
 
