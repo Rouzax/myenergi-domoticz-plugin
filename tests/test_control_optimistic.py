@@ -23,12 +23,10 @@ def test_boost_bad_level_returns_none():
     assert optimistic_update(UNIT_BOOST, "Set Level", 0, "English") is None
 
 
-def test_min_green_optimistic_update():
-    update = optimistic_update(UNIT_MIN_GREEN, "Set Level", 60, "English")
-    assert update.unit == 16
-    assert update.svalue == "60"
-    assert update.type_name == "Setpoint"
-    assert update.image == 30
+def test_min_green_optimistic_is_selector():
+    upd = optimistic_update(UNIT_MIN_GREEN, "Set Level", 60, "English")
+    assert upd.type_name == "Selector Switch" and upd.nvalue == 60 and upd.svalue == "60"
+    assert upd.switchtype == 18
 
 
 def test_mode_bad_level_returns_none():

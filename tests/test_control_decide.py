@@ -66,10 +66,10 @@ def test_boost_smart_rejects_missing_kwh():
     assert decide_write(UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_TIME: "1400"}) is None
 
 
-def test_min_green_setpoint_clamps():
-    intent = decide_write(UNIT_MIN_GREEN, "Set Level", 60.0, {})
-    assert intent.kind == "min_green"
-    assert intent.pct == 60
+def test_min_green_selector_level_maps_to_percent():
+    intent = decide_write(UNIT_MIN_GREEN, "Set Level", 60, siblings={})  # level 60 -> 50%
+    assert intent is not None and intent.kind == "min_green" and intent.pct == 50
+    assert decide_write(UNIT_MIN_GREEN, "Set Level", 0, siblings={}) is None  # "Off"
 
 
 def test_unknown_unit_is_none():

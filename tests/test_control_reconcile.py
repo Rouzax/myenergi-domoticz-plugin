@@ -113,9 +113,16 @@ def test_setpoints_carry_car_charger_icon():
 
 
 def test_min_green_reconciled_value():
-    status = _status(zappi={"zmo": 1, "mgl": 40})
+    status = _status(zappi={"zmo": 1, "mgl": 50})
     updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
-    assert updates[UNIT_MIN_GREEN].svalue == "40"
+    assert updates[UNIT_MIN_GREEN].svalue == "60"  # 50% -> level 60
+
+
+def test_min_green_reconciles_to_nearest_menu_level():
+    status = _status(zappi={"zmo": 3, "mgl": 50})
+    ups = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
+    mg = ups[UNIT_MIN_GREEN]
+    assert mg.type_name == "Selector Switch" and mg.nvalue == 60  # 50% -> level 60
 
 
 def test_boost_kwh_and_time_not_reemitted_once_created():

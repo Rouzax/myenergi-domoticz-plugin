@@ -1,6 +1,5 @@
 from control import (
     ZMO_TO_LEVEL,
-    clamp_min_green,
     decode_lck,
     validate_hhmm,
     validate_kwh,
@@ -25,13 +24,6 @@ def test_validate_hhmm_rejects_bad_times_and_formats():
     assert validate_hhmm(2400) is None  # HH >= 24
     assert validate_hhmm(-1) is None
     assert validate_hhmm(float("nan")) is None
-
-
-def test_clamp_min_green():
-    assert clamp_min_green(60) == 60
-    assert clamp_min_green(-1) == 0
-    assert clamp_min_green(150) == 100
-    assert clamp_min_green(float("inf")) is None
 
 
 def test_decode_lck_reports_bits():
@@ -60,4 +52,3 @@ def test_validators_reject_oversized_int():
     huge = 10**400
     assert validate_kwh(huge) is None
     assert validate_hhmm(huge) is None
-    assert clamp_min_green(huge) is None

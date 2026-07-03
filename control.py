@@ -21,7 +21,6 @@ MODE_LEVELS = {10: 1, 20: 2, 30: 3, 40: 4}
 ZMO_TO_LEVEL = {1: 10, 2: 20, 3: 30, 4: 40}
 
 MAX_KWH = 100
-MAX_GREEN = 100
 
 BOOST_KWH_MENU = (0, 5, 10, 20, 40, 60, 80, 99)
 COMPLETE_BY_MENU = tuple(h * 100 for h in range(24))
@@ -76,13 +75,6 @@ def validate_hhmm(level) -> "str | None":
     return f"{hhmm:04d}"
 
 
-def clamp_min_green(level) -> "int | None":
-    if not _finite(level):
-        return None
-    pct = int(round(float(level)))
-    return max(0, min(pct, MAX_GREEN))
-
-
 def decode_lck(lck: int) -> str:
     flags = [name for bit, name in LCK_BITS if lck & (1 << bit)]
     return f"{lck} ({', '.join(flags) if flags else 'none'})"
@@ -127,7 +119,7 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
             return WriteIntent("boost_smart", kwh=kwh, hhmm=hhmm) if hhmm is not None else None
         return None
     if unit == UNIT_MIN_GREEN:
-        pct = clamp_min_green(level) if command == "Set Level" else None
+        pct = menu_value(MIN_GREEN_MENU, level) if command == "Set Level" else None
         return WriteIntent("min_green", pct=pct) if pct is not None else None
     return None
 
@@ -227,17 +219,18 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
             switchtype=18,
         )
     if unit == UNIT_MIN_GREEN:
-        pct = clamp_min_green(level) if command == "Set Level" else None
-        if pct is None:
+        if command != "Set Level" or menu_value(MIN_GREEN_MENU, level) is None:
             return None
+        lvl = int(level)
         return DeviceUpdate(
             unit=UNIT_MIN_GREEN,
-            type_name="Setpoint",
-            options=_setpoint_options("%", 1, MAX_GREEN, 10),
+            type_name="Selector Switch",
+            options=_min_green_options(),
             name=control_device_name("min_green", language),
-            nvalue=0,
-            svalue=str(pct),
+            nvalue=lvl,
+            svalue=str(lvl),
             image=30,
+            switchtype=18,
         )
     return None
 
@@ -343,15 +336,17 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
             )
         mgl = zappi.get("mgl")
         if isinstance(mgl, int) and not isinstance(mgl, bool):
+            lvl = menu_level(MIN_GREEN_MENU, mgl)
             updates.append(
                 DeviceUpdate(
                     unit=UNIT_MIN_GREEN,
-                    type_name="Setpoint",
-                    options=_setpoint_options("%", 1, MAX_GREEN, 10),
+                    type_name="Selector Switch",
+                    options=_min_green_options(),
                     name=control_device_name("min_green", lang),
-                    nvalue=0,
-                    svalue=str(mgl),
+                    nvalue=lvl,
+                    svalue=str(lvl),
                     image=30,
+                    switchtype=18,
                 )
             )
     if config.allow_control and status.zappi_lck is not None:
