@@ -39,3 +39,25 @@ def test_non_generation_harvi_is_signed_custom_without_sun():
     u = ups[0]
     assert u.type_name == "Custom" and u.options == {"Custom": "1;W"}
     assert u.image == 0 and u.svalue == "-200"
+
+
+def test_generation_harvi_negative_standby_draw_clamps_to_zero():
+    # FB12: idle-standby draw can sum slightly negative on a generation harvi; a
+    # generation tile (Usage + sun icon) never shows a negative value.
+    h = Device(kind="harvi", serial="19000001", cts=[CT(1, "solar", -4)])
+    ups = plan_harvi_updates([h], {"19000001": 20}, {}, "English")
+    assert ups[0].svalue == "0"
+
+
+def test_generation_harvi_positive_power_is_unaffected():
+    h = Device(kind="harvi", serial="19000001", cts=[CT(1, "solar", 100)])
+    ups = plan_harvi_updates([h], {"19000001": 20}, {}, "English")
+    assert ups[0].svalue == "100"
+
+
+def test_non_generation_harvi_negative_value_stays_signed():
+    # Non-generation (battery/other) harvis keep their raw signed value; only the
+    # generation branch is clamped.
+    h = Device(kind="harvi", serial="22000001", cts=[CT(1, "other", -50)])
+    ups = plan_harvi_updates([h], {"22000001": 20}, {}, "English")
+    assert ups[0].svalue == "-50"

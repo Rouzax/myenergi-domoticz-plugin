@@ -258,6 +258,11 @@ def onHeartbeat():
             f"sta={status.zappi.get('sta')} pst={status.zappi.get('pst')} "
             f"vol={status.zappi.get('vol')} frq={status.zappi.get('frq')} harvis={len(harvis)}"
         )
+        if harvis:
+            harvi_values = " ".join(
+                f"harvi_{h.serial}={sum(ct.power_w for ct in h.cts)}" for h in harvis
+            )
+            Domoticz.Debug(f"harvi power {harvi_values}")
         new_alloc = assign_harvi_units(st.unit_alloc, [h.serial for h in harvis])
         alloc_changed = new_alloc != st.unit_alloc
         st.unit_alloc = new_alloc

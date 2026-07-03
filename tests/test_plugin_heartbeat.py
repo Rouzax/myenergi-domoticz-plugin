@@ -178,6 +178,8 @@ def test_verbose_logging_emits_status_and_timing():
         line.startswith("fetch_status duration_ms=") and "outcome=success" in line for line in log
     )
     assert any(line.startswith("apply units=") for line in log)
+    # FB14: per-harvi summed watts logged at Debug, keyed by serial.
+    assert any(line == "harvi power harvi_19000001=250" for line in log)
 
 
 def test_heartbeat_caches_validated_serial_and_hides_mode_text_once():

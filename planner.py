@@ -225,7 +225,9 @@ def plan_harvi_updates(harvis, harvi_units, harvi_names, lang):
         name = harvi_names.get(h.serial) or translations.harvi_default_name(h.serial, lang)
         if any(ct.role == "solar" for ct in h.cts):
             # Generation: unidirectional watts -> Usage device with the sun icon.
-            updates.append(DeviceUpdate(unit, "Usage", {}, name, 0, f"{power}", HARVI_IMAGE))
+            # Standby draw can sum slightly negative; a generation tile never shows < 0.
+            gen_power = max(0, power)
+            updates.append(DeviceUpdate(unit, "Usage", {}, name, 0, f"{gen_power}", HARVI_IMAGE))
         else:
             # Anything else (load, battery, storage): a signed Custom watt sensor, no icon,
             # so a battery swinging charge/discharge (+/-) renders correctly.
