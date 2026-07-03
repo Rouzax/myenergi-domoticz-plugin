@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass, field
 
-STATE_VERSION = 2
+STATE_VERSION = 3
 
 
 @dataclass
@@ -23,6 +23,9 @@ class PluginState:
       day whose energy data was fully folded into base_wh.
     - mode_text_hidden: whether the read-only Mode Text device has already
       been hidden as a one-time step when charger control was first enabled.
+    - control_shown: whether the control units are currently shown by us for
+      the enabled state. Gates the one-time show/hide on the AllowControl
+      transition so a user's manual hide of a control device is never re-forced.
     """
 
     last_processed_date: "str | None" = None
@@ -30,11 +33,13 @@ class PluginState:
     base_wh: "dict[str, float]" = field(default_factory=dict)
     auto_names: "dict[str, str]" = field(default_factory=dict)
     mode_text_hidden: bool = False
+    control_shown: bool = False
 
 
 def migrate(raw: dict) -> dict:
     """Transform older payloads to current shape."""
     raw.setdefault("mode_text_hidden", False)
+    raw.setdefault("control_shown", False)
     raw.setdefault("version", STATE_VERSION)
     return raw
 
@@ -49,6 +54,7 @@ def dumps(state: PluginState) -> str:
             "base_wh": state.base_wh,
             "auto_names": state.auto_names,
             "mode_text_hidden": state.mode_text_hidden,
+            "control_shown": state.control_shown,
         },
         separators=(",", ":"),
     )
@@ -65,4 +71,5 @@ def loads(text: str) -> PluginState:
         base_wh=raw.get("base_wh", {}),
         auto_names=raw.get("auto_names", {}),
         mode_text_hidden=raw.get("mode_text_hidden", False),
+        control_shown=raw.get("control_shown", False),
     )
