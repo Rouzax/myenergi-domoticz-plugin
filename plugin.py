@@ -141,6 +141,7 @@ class _PluginState:
     discovery_backoff_seconds: float = 0.0
     discovery_failing: bool = False
     mode_text_hidden: bool = False
+    control_shown: bool = False
     reconcile_suppress: dict = field(default_factory=dict)
 
 
@@ -166,6 +167,7 @@ def onStart():
         _state.auto_names = _restored.auto_names
         _state.unit_alloc = _restored.unit_alloc
         _state.mode_text_hidden = _restored.mode_text_hidden
+        _state.control_shown = _restored.control_shown
     except Exception:  # noqa: BLE001
         _state.auto_names = {}
         _state.unit_alloc = {}
@@ -237,6 +239,7 @@ def _persist_state(st):
         auto_names=st.auto_names,
         unit_alloc=st.unit_alloc,
         mode_text_hidden=st.mode_text_hidden,
+        control_shown=st.control_shown,
     )
 
 
@@ -392,6 +395,7 @@ def _filter_control_updates(devices, did, updates, reconcile_suppress, now):
 def _reconcile_control(st, devices, did, status, now):
     before_names = st.auto_names
     before_hidden = st.mode_text_hidden
+    before_shown = st.control_shown
     control_updates = control.plan_control_updates(status, st.config, _existing_units(devices, did))
     control_updates = _filter_control_updates(
         devices, did, control_updates, st.reconcile_suppress, now
@@ -401,20 +405,31 @@ def _reconcile_control(st, devices, did, status, now):
     dev = devices.get(did)
     mode_text_exists = dev is not None and UNIT_MODE_TEXT in dev.Units
 
+    # Show/hide the control units only ONCE per AllowControl transition, never every
+    # reconcile: re-forcing Used=1 each beat would undo a user's manual hide of a
+    # control device (e.g. Charger Lock State). The control_shown flag is persisted.
     if st.config.allow_control:
         # Defer the one-time hide until unit 4 exists (energy path creates it on the
         # first heartbeat); setting the flag before it exists would suppress it forever.
         if not st.mode_text_hidden and mode_text_exists:
             domoticz_api.deactivate_units(devices, did, [UNIT_MODE_TEXT])
             st.mode_text_hidden = True
-        domoticz_api.activate_units(devices, did, CONTROL_UNITS)
+        if not st.control_shown:
+            domoticz_api.activate_units(devices, did, CONTROL_UNITS)
+            st.control_shown = True
     else:
-        domoticz_api.deactivate_units(devices, did, CONTROL_UNITS)
+        if st.control_shown:
+            domoticz_api.deactivate_units(devices, did, CONTROL_UNITS)
+            st.control_shown = False
         if st.mode_text_hidden:
             domoticz_api.activate_units(devices, did, [UNIT_MODE_TEXT])
             st.mode_text_hidden = False
 
-    if st.auto_names != before_names or st.mode_text_hidden != before_hidden:
+    if (
+        st.auto_names != before_names
+        or st.mode_text_hidden != before_hidden
+        or st.control_shown != before_shown
+    ):
         domoticz_api.save_state(_persist_state(st))
 
 

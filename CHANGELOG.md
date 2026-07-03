@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Respect a manual hide of a control device. The control units (Charge Mode, Boost, Boost kWh,
+  Boost Ready-By, Min Green, Charger Lock State) are now shown or hidden only once on the
+  Allow Control on/off transition, instead of being re-forced visible on every heartbeat, so
+  unchecking "Used" on a control device (for example Charger Lock State) now sticks.
+
 ## [1.0.1] - 2026-07-03
 
 ### Fixed

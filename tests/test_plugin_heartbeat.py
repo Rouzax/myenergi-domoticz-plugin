@@ -219,13 +219,31 @@ def test_heartbeat_hides_control_devices_when_control_disabled():
     assert st.mode_text_hidden is False
 
 
-def test_heartbeat_reshows_control_devices_when_control_reenabled():
+def test_heartbeat_respects_manual_hide_while_control_stays_on():
+    # A control unit is shown once when control is enabled, then never re-forced
+    # Used=1. If the user hides one (e.g. Charger Lock State), it must stay hidden
+    # across later heartbeats while control remains on. UNIT_MODE stands in for any
+    # CONTROL_UNITS member since they are shown/hidden together.
     _setup(counter_every=1, allow_control=True)
+    plugin.onHeartbeat()  # beat 1: creates the control devices, all visible
+    did = device_id(0)
+    Domoticz.Devices[did].Units[control.UNIT_MODE].Used = 0  # user hides it
+
+    plugin.onHeartbeat()  # still allow_control=True
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 0
+
+
+def test_heartbeat_reshows_control_devices_on_off_then_on_toggle():
+    st = _setup(counter_every=1, allow_control=True)
     plugin.onHeartbeat()  # beat 1: creates the control devices
     did = device_id(0)
-    Domoticz.Devices[did].Units[control.UNIT_MODE].Used = 0  # simulate a prior disable
 
-    plugin.onHeartbeat()  # still allow_control=True -> re-activated
+    st.config.allow_control = False
+    plugin.onHeartbeat()  # off transition -> hidden once
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 0
+
+    st.config.allow_control = True
+    plugin.onHeartbeat()  # on transition -> re-shown once
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 1
 
 

@@ -160,12 +160,17 @@ def test_onstart_hides_mode_text_when_unit7_present(monkeypatch):
 def test_onstart_hides_control_when_disabled(monkeypatch):
     monkeypatch.setattr(plugin, "MyEnergiClient", _ReconcileClient)
     plugin.Parameters = _params("false")
-    # Model a restart where control devices already exist and are visible from a
-    # prior run with AllowControl on; plan_control_updates emits nothing while
-    # disabled, so onStart must rely on the deactivate path to hide them.
+    # Model a restart where control was ON in the prior run: the control devices
+    # exist and are visible, and control_shown was persisted True. plan_control_updates
+    # emits nothing while disabled, so onStart must hide them once on the disable
+    # transition (control_shown True -> deactivate -> False).
+    import domoticz_api
+    from persistence import PluginState
+
     did = device_id(0)
     for u in plugin.CONTROL_UNITS:
         Domoticz.Unit(Name="x", DeviceID=did, Unit=u, TypeName="Selector Switch", Used=1).Create()
+    domoticz_api.save_state(PluginState(control_shown=True))
     plugin.onStart()
     units = Domoticz.Devices[did].Units
     for u in plugin.CONTROL_UNITS:
