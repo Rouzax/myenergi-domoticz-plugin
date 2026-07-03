@@ -14,7 +14,7 @@ def clamp_counter(prev_wh, candidate_wh, max_step_wh):
 def seed_base_wh(svalue_wh, today_sum_wh, max_plausible_wh):
     if svalue_wh > max_plausible_wh:
         return None
-    return svalue_wh - today_sum_wh
+    return max(0.0, svalue_wh - today_sum_wh)
 
 
 def _parse(d: str) -> date:

@@ -52,6 +52,16 @@ def test_live_beat_keeps_prior_energy():
     assert u[UNIT_VOLTAGE].svalue == "234.3"
 
 
+def test_live_beat_clamps_negative_prior_counter():
+    # A device that persisted a negative counter (e.g. base seeded negative before the
+    # seed fix) must never render a negative kWh energy: the display clamps at 0.
+    state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
+    prev = {UNIT_SOLAR: -500.0}
+    updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
+    u = _by_unit(updates)
+    assert u[UNIT_SOLAR].svalue == "1215;0.0000"
+
+
 def test_live_beat_remaining_devices():
     # Covers the five units not asserted in test_live_beat_keeps_prior_energy:
     # Home (2), EV (3), Zappi Mode (4), Charge Status (5), Frequency (9).

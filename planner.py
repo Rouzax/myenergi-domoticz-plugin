@@ -146,6 +146,9 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
             energies[name], _warn = clamp_counter(prev, candidate, max_step_wh)
         new_state = state
 
+    # A kWh meter never renders below zero, even if a device persisted a negative counter.
+    energies = {name: max(0.0, value) for name, value in energies.items()}
+
     mode_text = translations.zappi_mode(_int(z.get("zmo")), lang)
     status_text = translations.charge_status(_int(z.get("sta")), str(z.get("pst", "")), lang)
     plug_text = translations.plug_status(str(z.get("pst", "")), lang)

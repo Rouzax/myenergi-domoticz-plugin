@@ -1,0 +1,114 @@
+[
+  {
+    "eddi": []
+  },
+  {
+    "harvi": [
+      {
+        "deviceClass": "HARVI",
+        "sno": 20000003,
+        "dat": "03-07-2026",
+        "tim": "07:18:03",
+        "ectp1": 246,
+        "ectp2": 268,
+        "ectp3": 247,
+        "ectt1": "Generation",
+        "ectt2": "Generation",
+        "ectt3": "Generation",
+        "ect1p": 1,
+        "ect2p": 2,
+        "ect3p": 3,
+        "fwv": "3170S0.000",
+        "productCode": "3170"
+      },
+      {
+        "deviceClass": "HARVI",
+        "sno": 20000004,
+        "dat": "03-07-2026",
+        "tim": "07:17:53",
+        "ectp1": 352,
+        "ectp2": 357,
+        "ectp3": 360,
+        "ectt1": "Generation",
+        "ectt2": "Generation",
+        "ectt3": "Generation",
+        "ect1p": 1,
+        "ect2p": 2,
+        "ect3p": 3,
+        "fwv": "3170S0.000",
+        "productCode": "3170"
+      }
+    ]
+  },
+  {
+    "libbi": []
+  },
+  {
+    "zappi": [
+      {
+        "deviceClass": "ZAPPI",
+        "sno": 20000002,
+        "dat": "03-07-2026",
+        "tim": "07:18:03",
+        "ectp1": 0,
+        "ectp2": 0,
+        "ectp3": 0,
+        "ectt1": "Internal Load",
+        "ectt2": "Internal Load",
+        "ectt3": "Internal Load",
+        "bsm": 0,
+        "bst": 0,
+        "dst": 1,
+        "div": 0,
+        "frq": 49.97,
+        "gen": 1833,
+        "grd": 2196,
+        "pha": 1,
+        "pri": 1,
+        "sta": 1,
+        "tz": 3,
+        "vol": 2348,
+        "che": 1.47,
+        "isVHubEnabled": true,
+        "bss": 0,
+        "lck": 24,
+        "pst": "B1",
+        "zmo": 3,
+        "pwm": 1000,
+        "zs": 1282,
+        "rdc": -4,
+        "rac": -3,
+        "rrac": -4,
+        "zsh": 5,
+        "zsl": 2,
+        "ectp4": 2541,
+        "ectp5": 101,
+        "ectp6": -564,
+        "ectt4": "Grid",
+        "ectt5": "Grid",
+        "ectt6": "Grid",
+        "beingTamperedWith": false,
+        "batteryDischargeEnabled": false,
+        "g100LockoutState": "NONE",
+        "phaseSetting": "AUTO",
+        "wifiLink": false,
+        "ethernetLink": true,
+        "ocppEnabled": false,
+        "mgl": 1,
+        "sbh": 17,
+        "sbk": 5,
+        "sbm": 0,
+        "fwv": "3562S5.782",
+        "cmt": 254,
+        "newAppAvailable": false,
+        "newBootloaderAvailable": false,
+        "productCode": "3562"
+      }
+    ]
+  },
+  {
+    "asn": "s18.myenergi.net",
+    "fwv": "3402S5.782",
+    "vhub": 1
+  }
+]

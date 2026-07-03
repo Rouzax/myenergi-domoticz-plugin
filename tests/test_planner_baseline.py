@@ -15,6 +15,16 @@ def test_seed_from_prev_counter_when_base_missing():
     assert new.last_processed_date == "2026-06-30"
 
 
+def test_mid_day_install_seeds_non_negative_base():
+    # Device created mid-day: no prior counter (prev=0) but today already accumulated.
+    # The seeded base must not go negative (it would make the counter read < 0).
+    state = PluginState(last_processed_date="2026-06-30", base_wh={}, unit_alloc={}, auto_names={})
+    today = {"gep": 3_600_000}  # solar today = 1000 Wh
+    prev = {1: 0.0, 2: 0.0, 3: 0.0}
+    new = advance_baselines(state, [], today, prev, AGG, 25.0, "2026-07-01")
+    assert new.base_wh["1"] == 0.0  # was prev - today = -1000.0
+
+
 def test_backfill_folds_missing_days_once():
     state = PluginState(
         last_processed_date="2026-06-28",
