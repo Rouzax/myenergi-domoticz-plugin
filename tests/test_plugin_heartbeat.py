@@ -201,6 +201,29 @@ def test_heartbeat_no_control_updates_when_gate_off():
     assert plugin._state.mode_text_hidden is False
 
 
+def test_heartbeat_hides_control_devices_when_control_disabled():
+    st = _setup(counter_every=1, allow_control=True)
+    plugin.onHeartbeat()  # beat 1: creates the control devices, all visible
+    did = device_id(0)
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 1
+    assert Domoticz.Devices[did].Units[control.UNIT_BOOST].Used == 1
+
+    st.config.allow_control = False
+    plugin.onHeartbeat()
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 0
+    assert Domoticz.Devices[did].Units[control.UNIT_BOOST].Used == 0
+
+
+def test_heartbeat_reshows_control_devices_when_control_reenabled():
+    _setup(counter_every=1, allow_control=True)
+    plugin.onHeartbeat()  # beat 1: creates the control devices
+    did = device_id(0)
+    Domoticz.Devices[did].Units[control.UNIT_MODE].Used = 0  # simulate a prior disable
+
+    plugin.onHeartbeat()  # still allow_control=True -> re-activated
+    assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 1
+
+
 def test_reconcile_suppression_skips_units_with_future_deadline():
     class _ModeClient(_FakeClient):
         def __init__(self):

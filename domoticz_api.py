@@ -58,8 +58,16 @@ def apply_updates(devices, dev_id, updates, auto_names) -> dict:
 def deactivate_units(devices, dev_id, units) -> None:
     for unit in units:
         existing = _existing_unit(devices, dev_id, unit)
-        if existing is not None:
+        if existing is not None and existing.Used != 0:
             existing.Used = 0
+            existing.Update(UpdateProperties=True)
+
+
+def activate_units(devices, dev_id, units) -> None:
+    for unit in units:
+        existing = _existing_unit(devices, dev_id, unit)
+        if existing is not None and existing.Used != 1:
+            existing.Used = 1
             existing.Update(UpdateProperties=True)
 
 

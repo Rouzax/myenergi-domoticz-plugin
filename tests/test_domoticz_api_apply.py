@@ -1,6 +1,6 @@
 import Domoticz
 
-from domoticz_api import apply_updates, deactivate_units, device_id
+from domoticz_api import activate_units, apply_updates, deactivate_units, device_id
 from planner import DeviceUpdate
 
 
@@ -87,3 +87,66 @@ def test_deactivate_sets_used_zero():
 def test_deactivate_missing_unit_is_noop():
     did = device_id(1)
     deactivate_units(Domoticz.Devices, did, [99])  # must not raise
+
+
+def _spy_update_calls(unit):
+    calls = []
+    orig = unit.Update
+
+    def _wrapped(**kw):
+        calls.append(kw)
+        return orig(**kw)
+
+    unit.Update = _wrapped
+    return calls
+
+
+def test_deactivate_idempotent_skips_update_when_already_hidden():
+    did = device_id(1)
+    apply_updates(
+        Domoticz.Devices,
+        did,
+        [_u(4, "Zappi Mode", "Eco", tn="Text", opts={})],
+        {},
+    )
+    unit = Domoticz.Devices[did].Units[4]
+    unit.Used = 0
+    calls = _spy_update_calls(unit)
+    deactivate_units(Domoticz.Devices, did, [4])
+    assert unit.Used == 0
+    assert calls == []
+
+
+def test_activate_sets_used_one():
+    did = device_id(1)
+    apply_updates(
+        Domoticz.Devices,
+        did,
+        [_u(12, "Charge Mode", "0", tn="Selector Switch", opts={})],
+        {},
+    )
+    unit = Domoticz.Devices[did].Units[12]
+    unit.Used = 0
+    activate_units(Domoticz.Devices, did, [12])
+    assert unit.Used == 1
+
+
+def test_activate_idempotent_skips_update_when_already_visible():
+    did = device_id(1)
+    apply_updates(
+        Domoticz.Devices,
+        did,
+        [_u(12, "Charge Mode", "0", tn="Selector Switch", opts={})],
+        {},
+    )
+    unit = Domoticz.Devices[did].Units[12]
+    assert unit.Used == 1  # Create() defaults Used=1
+    calls = _spy_update_calls(unit)
+    activate_units(Domoticz.Devices, did, [12])
+    assert unit.Used == 1
+    assert calls == []
+
+
+def test_activate_missing_unit_is_noop():
+    did = device_id(1)
+    activate_units(Domoticz.Devices, did, [99])  # must not raise

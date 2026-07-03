@@ -83,6 +83,17 @@ _MAX_BACKFILL_DAYS = 14
 _DISCOVERY_BACKOFF_INITIAL = 20.0
 _DISCOVERY_BACKOFF_CAP = 900.0
 
+# Units plan_control_updates can emit; hidden (Used=0) when control is disabled,
+# re-shown (Used=1) when it is re-enabled. Unit 17 was removed and is not a member.
+CONTROL_UNITS = (
+    control.UNIT_MODE,
+    control.UNIT_BOOST,
+    control.UNIT_BOOST_KWH,
+    control.UNIT_BOOST_TIME,
+    control.UNIT_MIN_GREEN,
+    control.UNIT_LOCK_STATE,
+)
+
 # Debug Level -> Domoticz.Debugging() bitmask. 2 = Python-only (this plugin's own
 # Domoticz.Debug lines); 1 = All (adds framework internals). 0 = off.
 _DEBUG_MASK = {0: 0, 1: 2, 2: 1}
@@ -333,6 +344,11 @@ def onHeartbeat():
             Domoticz.Debug(f"apply units={len(updates)}")
             if st.auto_names != before_names or alloc_changed:
                 domoticz_api.save_state(_persist_state(st))
+
+        if st.config.allow_control:
+            domoticz_api.activate_units(devices, did, CONTROL_UNITS)
+        else:
+            domoticz_api.deactivate_units(devices, did, CONTROL_UNITS)
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
