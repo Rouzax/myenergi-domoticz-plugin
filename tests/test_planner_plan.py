@@ -27,6 +27,14 @@ def _by_unit(updates):
     return {u.unit: u for u in updates}
 
 
+def test_solar_power_clamped_non_negative():
+    # Inverter standby can read gen slightly negative at night; a PV tile never shows < 0.
+    status = SystemStatus(devices=[], zappi={"gen": -4, "grd": 500, "div": 0}, zappi_lck=None)
+    updates, _ = plan(status, None, PluginState(), {UNIT_SOLAR: 1000.0}, CFG, max_step_wh=1e6)
+    u = _by_unit(updates)
+    assert u[UNIT_SOLAR].svalue.startswith("0;")
+
+
 def test_live_beat_keeps_prior_energy():
     state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: 5000.0}

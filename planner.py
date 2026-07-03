@@ -127,7 +127,7 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
     lang = config.language
     gen, grd, div = _int(z.get("gen")), _int(z.get("grd")), _int(z.get("div"))
     powers = {
-        "solar": gen,
+        "solar": max(0, gen),
         "ev": div,
         "home": max(0, gen + grd - div),
         "grid_import": max(0, grd),
