@@ -9,7 +9,7 @@ It is built for one hub with at least one zappi, and covers every harvi on that 
 surfaces numbers a plain utility meter cannot see on its own, such as how much of your solar
 went straight to the car versus the grid.
 
-> screenshot placeholder: dashboard view of the myenergi Monitor devices in Domoticz
+![The myenergi monitoring devices in Domoticz: solar, home, EV, grid, and per-inverter power](assets/devices-overview.png)
 
 ## Key features
 

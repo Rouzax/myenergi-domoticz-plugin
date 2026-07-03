@@ -22,6 +22,8 @@ start or cancel a boost, or change the Eco+ minimum green percentage from Domoti
 
 ## Control devices (units 12-18)
 
+![The myenergi charger control devices in Domoticz: charge mode, boost, boost kWh, ready-by time, and Eco+ minimum green](assets/control-devices.png)
+
 | Unit | Device name | Domoticz type | Style | What it does |
 |---|---|---|---|---|
 | 12 | Charge Mode | Selector Switch | Buttons | Sets the zappi's mode: Fast, Eco, Eco+, or Stop. Writes immediately when you press a button. |

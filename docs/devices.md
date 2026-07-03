@@ -4,6 +4,8 @@ These devices are created automatically on the plugin's first successful poll an
 manual setup. They are always present, regardless of the **Allow Control** setting. For the
 separate, opt-in charger control devices, see [Charger control](control.md).
 
+![The myenergi monitoring devices in Domoticz: solar, home, EV, grid, and per-inverter power](assets/devices-overview.png)
+
 ## Fixed devices (units 1-11)
 
 | Unit | Device name | Domoticz type | What it shows |
