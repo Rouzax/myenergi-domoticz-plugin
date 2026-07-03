@@ -92,7 +92,9 @@ def test_boost_resting_level_manual_when_active():
 
 
 def test_boost_resting_level_smart_when_active():
-    assert boost_resting_level({"bsm": 2}) == 20
+    # Verified live: Smart boost -> bsm=1, bss=1; Manual -> bsm=1, bss=0.
+    assert boost_resting_level({"bsm": 1, "bss": 1}) == 20
+    assert boost_resting_level({"bsm": 1, "bss": 0}) == 10
 
 
 def test_control_on_emits_boost_and_green_widgets():

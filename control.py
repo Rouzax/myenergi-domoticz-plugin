@@ -213,7 +213,7 @@ def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
         return DeviceUpdate(
             unit=UNIT_BOOST_KWH,
             type_name="Setpoint",
-            options=_setpoint_options("kWh", 0, MAX_KWH, 1),
+            options=_setpoint_options("kWh", 0, 99, 5),
             name=control_device_name("boost_kwh", language),
             nvalue=0,
             svalue=str(kwh),
@@ -234,14 +234,18 @@ def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
 
 
 def boost_resting_level(zappi) -> int:
-    # bsm==0 (idle) is confirmed against live jstatus. The active-boost mapping
-    # (bsm==1 manual, bsm==2 smart) is BEST-EFFORT / UNVERIFIED: the car was
-    # unplugged during live testing so an active boost's bsm/bss/bst could not be
-    # observed. Finalize this against a plugged-in, actively-boosting zappi.
-    bsm = zappi.get("bsm") if isinstance(zappi, dict) else None
-    if not isinstance(bsm, int) or bsm == 0:
+    # Verified on a plugged-in, actively-boosting zappi: Manual boost -> bsm=1,bss=0;
+    # Smart boost -> bsm=1,bss=1; no boost -> both 0. So bss=1 means Smart, else
+    # bsm=1 means Manual.
+    if not isinstance(zappi, dict):
         return 0
-    return 20 if bsm == 2 else 10
+    bss = zappi.get("bss")
+    if isinstance(bss, int) and not isinstance(bss, bool) and bss == 1:
+        return 20
+    bsm = zappi.get("bsm")
+    if isinstance(bsm, int) and not isinstance(bsm, bool) and bsm == 1:
+        return 10
+    return 0
 
 
 def plan_control_updates(status, config, existing_units=frozenset()) -> "list[DeviceUpdate]":
@@ -281,7 +285,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                 DeviceUpdate(
                     unit=UNIT_BOOST_KWH,
                     type_name="Setpoint",
-                    options=_setpoint_options("kWh", 0, MAX_KWH, 1),
+                    options=_setpoint_options("kWh", 0, 99, 5),
                     name=control_device_name("boost_kwh", lang),
                     nvalue=0,
                     svalue="0",
