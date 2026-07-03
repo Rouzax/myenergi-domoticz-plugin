@@ -196,7 +196,7 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
         return DeviceUpdate(
             unit=UNIT_MIN_GREEN,
             type_name="Setpoint",
-            options=_setpoint_options("%", 0, MAX_GREEN, 5),
+            options=_setpoint_options("%", 1, MAX_GREEN, 10),
             name=control_device_name("min_green", language),
             nvalue=0,
             svalue=str(pct),
@@ -306,7 +306,7 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
                 DeviceUpdate(
                     unit=UNIT_MIN_GREEN,
                     type_name="Setpoint",
-                    options=_setpoint_options("%", 0, MAX_GREEN, 5),
+                    options=_setpoint_options("%", 1, MAX_GREEN, 10),
                     name=control_device_name("min_green", lang),
                     nvalue=0,
                     svalue=str(mgl),
