@@ -122,17 +122,17 @@ def _boost_time_unit(st):
     return Domoticz.Devices[did].Units[UNIT_BOOST_TIME]
 
 
-def test_oncommand_persists_boost_kwh_setpoint_without_cloud_write():
+def test_oncommand_persists_boost_kwh_selector_without_cloud_write():
     st = _setup()
-    plugin.onCommand("myenergi_hub1", UNIT_BOOST_KWH, "Set Level", 5, "")
-    assert _boost_kwh_unit(st).sValue == "5"
+    plugin.onCommand("myenergi_hub1", UNIT_BOOST_KWH, "Set Level", 40, "")  # level 40 -> 20 kWh
+    assert _boost_kwh_unit(st).sValue == "40"
     assert st.client.calls == []
 
 
-def test_oncommand_persists_boost_time_setpoint_without_cloud_write():
+def test_oncommand_persists_boost_time_selector_without_cloud_write():
     st = _setup()
-    plugin.onCommand("myenergi_hub1", UNIT_BOOST_TIME, "Set Level", 1400, "")
-    assert _boost_time_unit(st).sValue == "1400"
+    plugin.onCommand("myenergi_hub1", UNIT_BOOST_TIME, "Set Level", 80, "")  # level 80 -> 07:00
+    assert _boost_time_unit(st).sValue == "80"
     assert st.client.calls == []
 
 

@@ -32,38 +32,34 @@ def test_boost_stop_all_cancels():
     assert intent.kind == "boost_cancel"
 
 
-def test_boost_manual_reads_kwh_sibling():
-    intent = decide_write(UNIT_BOOST, "Set Level", 10, {UNIT_BOOST_KWH: "5"})
-    assert intent.kind == "boost_manual"
-    assert intent.kwh == 5
+def test_boost_manual_reads_kwh_selector_level():
+    siblings = {UNIT_BOOST_KWH: 40}  # level 40 -> 20 kWh
+    intent = decide_write(UNIT_BOOST, "Set Level", 10, siblings)
+    assert intent.kind == "boost_manual" and intent.kwh == 20
 
 
-def test_boost_manual_rejects_zero_kwh():
-    assert decide_write(UNIT_BOOST, "Set Level", 10, {UNIT_BOOST_KWH: "0"}) is None
+def test_boost_manual_zero_kwh_selection_is_no_write():
+    siblings = {UNIT_BOOST_KWH: 10}  # level 10 -> 0 kWh -> validate_kwh None
+    assert decide_write(UNIT_BOOST, "Set Level", 10, siblings) is None
 
 
 def test_boost_manual_rejects_missing_kwh_sibling():
     assert decide_write(UNIT_BOOST, "Set Level", 10, {}) is None
 
 
-def test_boost_smart_reads_kwh_and_time():
-    intent = decide_write(
-        UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_KWH: "5", UNIT_BOOST_TIME: "1400"}
-    )
-    assert intent.kind == "boost_smart"
-    assert intent.kwh == 5
-    assert intent.hhmm == "1400"
+def test_boost_smart_reads_kwh_and_time_selector_levels():
+    siblings = {UNIT_BOOST_KWH: 30, UNIT_BOOST_TIME: 80}  # 10 kWh, 07:00
+    intent = decide_write(UNIT_BOOST, "Set Level", 20, siblings)
+    assert intent.kind == "boost_smart" and intent.kwh == 10 and intent.hhmm == "0700"
 
 
-def test_boost_smart_rejects_bad_time():
-    assert (
-        decide_write(UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_KWH: "5", UNIT_BOOST_TIME: "1275"})
-        is None
-    )
+def test_boost_smart_rejects_out_of_range_time_level():
+    siblings = {UNIT_BOOST_KWH: 30, UNIT_BOOST_TIME: 9999}
+    assert decide_write(UNIT_BOOST, "Set Level", 20, siblings) is None
 
 
 def test_boost_smart_rejects_missing_kwh():
-    assert decide_write(UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_TIME: "1400"}) is None
+    assert decide_write(UNIT_BOOST, "Set Level", 20, {UNIT_BOOST_TIME: 80}) is None
 
 
 def test_min_green_selector_level_maps_to_percent():

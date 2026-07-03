@@ -103,7 +103,7 @@ def test_control_on_emits_boost_and_green_widgets():
     assert {UNIT_BOOST, UNIT_BOOST_KWH, UNIT_BOOST_TIME, UNIT_MIN_GREEN} <= units
 
 
-def test_setpoints_carry_car_charger_icon():
+def test_control_widgets_carry_car_charger_icon():
     status = _status(zappi={"zmo": 1, "bsm": 0, "mgl": 40}, lck=1)
     updates = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}
     assert updates[UNIT_BOOST_KWH].image == 30
@@ -139,3 +139,18 @@ def test_boost_kwh_and_time_not_reemitted_once_created():
     assert UNIT_BOOST_TIME not in updates
     assert UNIT_BOOST in updates
     assert UNIT_MIN_GREEN in updates
+
+
+def test_boost_inputs_created_as_selectors_input_only():
+    status = _status(zappi={"zmo": 1})
+    ups = {u.unit: u for u in plan_control_updates(status, _cfg(allow_control=True))}  # created
+    assert ups[UNIT_BOOST_KWH].type_name == "Selector Switch" and ups[UNIT_BOOST_KWH].nvalue == 10
+    assert ups[UNIT_BOOST_TIME].type_name == "Selector Switch" and ups[UNIT_BOOST_TIME].nvalue == 10
+    # input-only: not re-emitted when they already exist
+    ups2 = {
+        u.unit
+        for u in plan_control_updates(
+            status, _cfg(allow_control=True), existing_units={UNIT_BOOST_KWH, UNIT_BOOST_TIME}
+        )
+    }
+    assert UNIT_BOOST_KWH not in ups2 and UNIT_BOOST_TIME not in ups2

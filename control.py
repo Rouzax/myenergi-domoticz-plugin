@@ -109,13 +109,15 @@ def decide_write(unit, command, level, siblings) -> "WriteIntent | None":
         if lvl == 30:
             return WriteIntent("boost_cancel")
         if lvl == 10:
-            kwh = validate_kwh(_sibling_float(siblings, UNIT_BOOST_KWH))
+            kwh = validate_kwh(menu_value(BOOST_KWH_MENU, _sibling_float(siblings, UNIT_BOOST_KWH)))
             return WriteIntent("boost_manual", kwh=kwh) if kwh is not None else None
         if lvl == 20:
-            kwh = validate_kwh(_sibling_float(siblings, UNIT_BOOST_KWH))
+            kwh = validate_kwh(menu_value(BOOST_KWH_MENU, _sibling_float(siblings, UNIT_BOOST_KWH)))
             if kwh is None:
                 return None
-            hhmm = validate_hhmm(_sibling_float(siblings, UNIT_BOOST_TIME))
+            hhmm = validate_hhmm(
+                menu_value(COMPLETE_BY_MENU, _sibling_float(siblings, UNIT_BOOST_TIME))
+            )
             return WriteIntent("boost_smart", kwh=kwh, hhmm=hhmm) if hhmm is not None else None
         return None
     if unit == UNIT_MIN_GREEN:
@@ -152,15 +154,6 @@ def _selector_options(kind, language, style="0"):
         "LevelNames": level_names,
         "LevelOffHidden": "true",
         "SelectorStyle": style,
-    }
-
-
-def _setpoint_options(unit_label, vmin, vmax, step):
-    return {
-        "ValueUnit": unit_label,
-        "ValueMin": str(vmin),
-        "ValueMax": str(vmax),
-        "ValueStep": str(step),
     }
 
 
@@ -238,27 +231,32 @@ def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
 def persist_input_setpoint(unit, level, language) -> "DeviceUpdate | None":
     if not _finite(level):
         return None
+    lvl = int(level)
     if unit == UNIT_BOOST_KWH:
-        kwh = max(0, min(int(round(float(level))), MAX_KWH))
+        if menu_value(BOOST_KWH_MENU, lvl) is None:
+            return None
         return DeviceUpdate(
             unit=UNIT_BOOST_KWH,
-            type_name="Setpoint",
-            options=_setpoint_options("kWh", 0, 99, 5),
+            type_name="Selector Switch",
+            options=_boost_kwh_options(),
             name=control_device_name("boost_kwh", language),
-            nvalue=0,
-            svalue=str(kwh),
+            nvalue=lvl,
+            svalue=str(lvl),
             image=30,
+            switchtype=18,
         )
     if unit == UNIT_BOOST_TIME:
-        hhmm = max(0, min(int(round(float(level))), 2359))
+        if menu_value(COMPLETE_BY_MENU, lvl) is None:
+            return None
         return DeviceUpdate(
             unit=UNIT_BOOST_TIME,
-            type_name="Setpoint",
-            options=_setpoint_options("HHMM", 0, 2359, 15),
+            type_name="Selector Switch",
+            options=_complete_by_options(),
             name=control_device_name("boost_time", language),
-            nvalue=0,
-            svalue=str(hhmm),
+            nvalue=lvl,
+            svalue=str(lvl),
             image=30,
+            switchtype=18,
         )
     return None
 
@@ -314,24 +312,26 @@ def plan_control_updates(status, config, existing_units=frozenset()) -> "list[De
             updates.append(
                 DeviceUpdate(
                     unit=UNIT_BOOST_KWH,
-                    type_name="Setpoint",
-                    options=_setpoint_options("kWh", 0, 99, 5),
+                    type_name="Selector Switch",
+                    options=_boost_kwh_options(),
                     name=control_device_name("boost_kwh", lang),
-                    nvalue=0,
-                    svalue="0",
+                    nvalue=10,  # default: 0 kWh
+                    svalue="10",
                     image=30,
+                    switchtype=18,
                 )
             )
         if UNIT_BOOST_TIME not in existing_units:
             updates.append(
                 DeviceUpdate(
                     unit=UNIT_BOOST_TIME,
-                    type_name="Setpoint",
-                    options=_setpoint_options("HHMM", 0, 2359, 15),
+                    type_name="Selector Switch",
+                    options=_complete_by_options(),
                     name=control_device_name("boost_time", lang),
-                    nvalue=0,
-                    svalue="0",
+                    nvalue=10,  # default: 00:00
+                    svalue="10",
                     image=30,
+                    switchtype=18,
                 )
             )
         mgl = zappi.get("mgl")
