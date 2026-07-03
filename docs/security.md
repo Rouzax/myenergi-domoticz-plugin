@@ -10,13 +10,14 @@ charger, not just a read-only reporting token.
 
 ## Where it is stored
 
-Domoticz stores hardware settings, including the API key, in its own database (in the hardware
-settings JSON). The key is kept in **cleartext** there, not encrypted or hashed.
+Domoticz stores hardware settings, including the API key, in its own database file, inside the
+settings for this specific piece of hardware. The key is kept there as **plain, readable text**,
+not encrypted or scrambled in any way.
 
-Domoticz does **not** expose the key through its web interface or JSON API: recent versions mask
-the field as dots and strip the value from API responses, so it cannot be read back from the UI or
-over the API once saved. The exposure is therefore the **database file itself**, not the Domoticz
-interface.
+Domoticz does **not** hand the key back through its web pages or its API: recent versions show
+the field as dots and leave the value out of anything the API returns, so it cannot be read back
+from the web interface, or fetched over the API, once it has been saved. The real exposure is
+therefore the **database file itself**, not Domoticz's own interface.
 
 !!! warning "Treat the database, and any backup of it, as a secret"
     Anyone with access to your Domoticz database file, or a backup of it, can read the API key
@@ -44,16 +45,17 @@ Do this as soon as you suspect exposure; there is no way to know who else has us
 
 ## What the plugin does to protect the key
 
-- The API key is never written to a device field, name, or any value visible in the Domoticz UI.
+- The API key is never written to a device field, device name, or anything else visible on a
+  Domoticz screen.
 - The API key is never written to the Domoticz log at any **Debug Level**, including Verbose.
-  Log messages that would otherwise include it have the key redacted before logging.
+  Any log message that would otherwise include it has the key blanked out before it is logged.
 - The plugin makes no outbound connections other than to the myenergi cloud
   (`director.myenergi.net` and the region-specific host it redirects to).
 
 ## Practical advice
 
 - Never paste your API key into a chat, forum post, issue tracker, or screenshot when asking for
-  help. Redact it first.
+  help. Black it out first.
 - Keep Domoticz itself behind authentication if it is reachable from outside your home network;
   this plugin relies on Domoticz's own access control for who can view or command its devices.
 - Only turn on **Allow Control** if you actually want charger control available from Domoticz,

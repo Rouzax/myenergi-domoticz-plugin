@@ -34,10 +34,10 @@ survive a Domoticz restart.
 
 ## Per-harvi devices (unit 20 and up)
 
-Every harvi (CT-clamp inverter monitor) on the hub gets its own live-power device, starting at
-unit 20 and counting up as new harvis are discovered. Harvis report only instantaneous power to
-the myenergi cloud, not cumulative energy, so these devices are **watts-only**: there is no kWh
-counter for a harvi.
+Every harvi (a small CT-clamp sensor that measures power on a circuit or inverter) on the hub
+gets its own live-power device, starting at unit 20 and counting up as new harvis are
+discovered. A harvi only ever sends myenergi its power reading at that moment, not a running
+energy total, so these devices are **watts-only**: there is no kWh counter for a harvi.
 
 The device type depends on what the harvi is clamped to:
 

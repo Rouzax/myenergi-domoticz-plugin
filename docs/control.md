@@ -66,11 +66,12 @@ The possible flags are: **Locked Now**, **EV Plugged**, **EV Unplugged**, **Char
 **Charge session allowed**. If none apply, the device shows `(none)`. This device is read-only;
 there is no supported way to change the physical lock state from Domoticz.
 
-## Repeated commands are debounced
+## Pressing a button twice in a row does nothing extra
 
-To avoid hammering the myenergi cloud, the plugin ignores a repeated command on the same device
-within about 3 seconds, and enforces a short minimum gap between any two writes. If a command
-seems to have no effect, wait a few seconds and check the device state before retrying.
+If you press the same button again within about 3 seconds, the plugin ignores the second press,
+and it always leaves a short gap between any two commands it sends. This keeps it from sending
+myenergi's cloud a burst of requests. If a command seems to have had no effect, wait a few
+seconds and check the device's state before trying again.
 
 ## See also
 

@@ -9,70 +9,77 @@ On every poll (the **Live Poll Interval** setting), the plugin fetches the zappi
 status from the myenergi cloud and derives the power split shown on the [monitoring
 devices](devices.md):
 
-- **Solar Total** power = generation reading, floored at zero.
-- **EV Charging** power = the diversion (charging) reading reported by the zappi.
-- **Grid Import** power = the grid reading when it is positive (drawing from the grid), floored
-  at zero.
-- **Grid Export** power = the grid reading when it is negative (feeding back to the grid),
-  floored at zero.
-- **Home Consumption** power = generation + grid reading − EV charging power, floored at zero.
-  In plain terms: what was generated, plus what was drawn from (or minus what was sent to) the
-  grid, minus what went to the car, is what the rest of the house used.
+- **Solar Total** power = the generation reading from your inverters, never shown below zero.
+- **EV Charging** power = the charging (diversion) reading reported by the zappi.
+- **Grid Import** power = the grid reading when it is positive, meaning you are drawing from the
+  grid, never shown below zero.
+- **Grid Export** power = the grid reading when it is negative, meaning you are feeding power
+  back to the grid, never shown below zero.
+- **Home Consumption** power = generation + grid reading − EV charging power, never shown below
+  zero. In plain terms: what was generated, plus what was drawn from the grid (or minus what was
+  sent to the grid), minus what went to the car, is what the rest of the house used.
 
-Because it is a subtraction of several live readings, Home Consumption can be zero for a moment
-even when it "should" be small but positive, if the underlying readings do not line up exactly
-at that instant. The device never shows a negative value.
+Because Home Consumption is worked out by combining several live readings, it can briefly show 0
+even when you would expect a small positive number, if the underlying readings do not line up
+exactly at that instant. The device never shows a negative value.
 
 ## Cumulative kWh counters
 
-Solar Total, Home Consumption, EV Charging, Grid Import, and Grid Export also carry a cumulative
-energy counter, refreshed on the schedule set by **Counter Refresh (every N live polls)**.
+Solar Total, Home Consumption, EV Charging, Grid Import, and Grid Export also carry a running
+kWh counter, refreshed on the schedule set by **Counter Refresh (every N live polls)**.
 
 The counters are **not** a running total the plugin keeps by adding up its own live power
-samples. Instead, on every counter refresh, the plugin fetches the day's full per-minute energy
-history straight from myenergi and recalculates each counter as:
+readings as it goes. Instead, on every counter refresh, the plugin fetches the whole day's
+minute-by-minute energy history straight from myenergi and recalculates each counter as:
 
 ```
-counter = base + today's accumulated energy (from myenergi's own history)
+counter = starting point for the day + today's energy so far (from myenergi's own history)
 ```
 
 This keeps the counters matching what the myenergi app shows, and immune to gaps: if Domoticz
 was offline, restarted, or missed some polls, the next refresh still produces the correct total
 for the day.
 
-### Accumulate-from-install
+### Starting from zero on a new install
 
-The plugin does not import a myenergi device's lifetime energy total. There is no way to fetch
-one from the API, and even if there were, dropping a large lifetime figure into a Domoticz
-counter in one step would spike the charts. Instead, counters start low, at or near zero, on a
-fresh install and build forward from there.
+The plugin does not import your myenergi device's lifetime energy history. myenergi's cloud
+service does not offer a way to fetch that history, and even if it did, dropping a large
+historical total into a Domoticz counter in one go would put a spike in your charts. Instead,
+counters start near zero on a fresh install and build up from there as real energy is measured.
 
-On first run, the plugin seeds each counter's internal baseline as
-`max(0, current Domoticz device value − today's energy so far)`. On a brand-new device the
-current value is zero, so the baseline clamps to zero and the counter starts at roughly today's
-accumulated energy, then grows on each subsequent refresh. It is normal for a freshly installed
-counter to read low, or even zero, at first. On a restart of an existing install (not a fresh
-device), the same formula lets the counter continue smoothly from where it already was instead of
-jumping or resetting.
+On the very first run, the plugin works out a starting point for each counter from the device's
+current value (zero on a brand-new device) and how much energy myenergi has already recorded for
+today, never letting that starting point go below zero. On a brand-new device this comes out at
+zero, so the counter begins at roughly today's energy so far and grows with every later refresh.
+It is completely normal for a freshly installed counter to read low, or even zero, to begin with.
+If you restart the plugin on an install that has already been running for a while (not a fresh
+device), the same calculation lets the counter carry on smoothly from where it left off, instead
+of jumping or resetting.
 
-### Monotonic and clamped
+### Counters only ever go up, within reason
 
-Every counter update is clamped so it can:
+Every time a counter is about to be updated, the plugin checks two things:
 
-- never decrease, and
-- never jump by an implausible amount in one refresh, based on the **Max System Power (kW)**
-  setting.
+- the new value is never lower than before (a counter should never count backwards), and
+- the jump since the last update is never bigger than what your system could plausibly produce,
+  based on the **Max System Power (kW)** setting.
 
-An update that fails either check is discarded for that cycle and retried on the next refresh,
-rather than corrupting the counter or spiking a chart.
+If an update fails either check, the plugin skips it for that cycle and simply tries again on the
+next refresh, rather than writing a bad number and putting a spike in your chart.
 
-### Backfill on gaps
+### Catching up after downtime (backfill)
 
-If a counter refresh finds that one or more full days were missed (for example, Domoticz was
-down over a weekend), the plugin fetches each missing day's full-day total from myenergi and
-folds it into the counter's baseline, up to **14 days** of backfill. Older gaps beyond 14 days
-are logged as an error and permanently skipped for that counter; recovering them requires
-resetting the plugin's saved state.
+This only matters if Domoticz, or the plugin, has been offline for one or more whole days after
+already running successfully, for example because the host was switched off over a long weekend.
+It is a catch-up mechanism only, not something that looks back through your myenergi history when
+you first install the plugin: a fresh install always follows the "starting from zero" behaviour
+above. In normal day-to-day running you will not see any backfill happen, and that is expected.
+
+If a counter refresh finds that one or more full days were missed, the plugin fetches each
+missing day's full-day total from myenergi and adds it to the counter's running total, up to
+**14 days** of catch-up. Older gaps beyond 14 days are logged as an error and are permanently
+skipped for that counter; recovering them means clearing the plugin's saved data, for example by
+deleting the hardware in Domoticz and adding it again.
 
 ## The "Return" device type
 
@@ -92,5 +99,5 @@ independent samples, not a plugin error, and it evens out over time.
 ## See also
 
 - [Monitoring devices](devices.md) for what each device shows.
-- [Settings](settings.md) for the poll and counter-refresh intervals, and the system power
-  ceiling used for clamping.
+- [Settings](settings.md) for the poll and counter-refresh intervals, and the system power limit
+  used to catch unrealistic counter jumps.

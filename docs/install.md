@@ -27,7 +27,7 @@ cd /opt/domoticz/plugins            # adjust to your Domoticz install path
 git clone -b dist https://github.com/Rouzax/myenergi-domoticz-plugin myenergi
 ```
 
-This creates `.../domoticz/plugins/myenergi/plugin.py` and its supporting modules.
+This creates `.../domoticz/plugins/myenergi/plugin.py` and its supporting files.
 
 ## Step 2: Restart Domoticz
 

@@ -9,7 +9,7 @@ below.
 | Setting | Type | Default | What it does |
 |---|---|---|---|
 | Hub Serial Number | text, required | | The serial number of your myenergi hub, shown in the myenergi app and printed on the hub. Used as the API username. |
-| API Key | text, required, masked | | The API key generated in the myenergi app (**Account > Advanced > API key**). Grants full control of your charger and is stored in cleartext in the Domoticz database. See [Security](security.md). |
+| API Key | text, required, masked | | The API key generated in the myenergi app (**Account > Advanced > API key**). Grants full control of your charger and is stored as plain, readable text in the Domoticz database. See [Security](security.md). |
 
 ## Charger control
 
@@ -34,7 +34,7 @@ below.
 
 | Setting | Range / options | Default | What it does |
 |---|---|---|---|
-| Max System Power (kW) | 1-100, step 1 | 25 | A sanity ceiling on counter jumps, roughly your combined solar plus grid plus charger capacity in kW. Used to reject implausible energy-counter steps rather than as a hard limit on live power readings. |
+| Max System Power (kW) | 1-100, step 1 | 25 | A safety limit for the energy counters, roughly your combined solar, grid, and charger capacity in kW. The plugin uses it to spot and reject an unrealistic jump in a counter; it does not limit the live power readings themselves. |
 | Debug Level | None / Basic / Verbose | None | Logging verbosity written to the Domoticz log. Use Basic or Verbose only while troubleshooting; the API key is never written to the log at any level. |
 
 ## Harvi Names (optional)
@@ -57,6 +57,6 @@ its default `Harvi <serial>`. All eight fields are optional and blank by default
     [Monitoring devices](devices.md#per-harvi-devices-unit-20-and-up) for details.
 
 !!! note "Settings changes restart the plugin"
-    Saving hardware settings restarts the plugin's connection to Domoticz, including a
-    reconcile of the charger control devices against the current Allow Control value. Expect a
-    short gap in polling right after you save.
+    Saving hardware settings restarts the plugin's connection to Domoticz. As part of that
+    restart, it checks the current Allow Control setting and shows or hides the charger control
+    devices to match. Expect a short gap in polling right after you save.

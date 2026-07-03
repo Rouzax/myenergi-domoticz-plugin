@@ -14,8 +14,8 @@ went straight to the car versus the grid.
 ## Key features
 
 - **Real kWh counters, not just live watts.** Solar Total, Home Consumption, EV Charging, Grid
-  Import, and Grid Export all carry a cumulative energy counter alongside the instantaneous
-  power reading. Counters are rebuilt from myenergi's own per-minute history, are monotonic, and
+  Import, and Grid Export all carry a running kWh counter alongside the current power reading.
+  Counters are rebuilt from myenergi's own minute-by-minute history, only ever count up, and
   survive a Domoticz restart without resetting to zero.
 - **Derived Home Consumption.** Domoticz has no separate "rest of house" meter for a myenergi
   install, so the plugin calculates it: solar generation plus grid import minus grid export minus

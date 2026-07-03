@@ -1,6 +1,7 @@
 # Troubleshooting / FAQ
 
-Entries are grouped by what you actually see, not by which module caused it.
+Entries are grouped by what you actually see happening in Domoticz, not by which part of the
+plugin caused it.
 
 ## No devices appear at all
 
@@ -19,12 +20,13 @@ See also [Installation](install.md) for the full setup sequence.
 
 ## Devices stopped updating after working fine
 
-- Check the log at Basic or Verbose debug level for repeated discovery failures. The plugin
-  backs off and retries automatically (starting at 20 seconds, doubling up to 15 minutes) rather
-  than hammering myenergi's cloud, so a transient outage can take a few minutes to recover from
-  on its own.
-- A `401 Unauthorized` during rediscovery means the API key was invalidated (for example, you
-  rotated it in the myenergi app). Update the **API Key** field with the current key.
+- Check the log at Basic or Verbose debug level for repeated connection failures. The plugin
+  waits longer between each retry (starting at 20 seconds and doubling up to a maximum of 15
+  minutes) rather than hammering myenergi's cloud with requests, so a short outage can take a few
+  minutes to recover from on its own.
+- A `401 Unauthorized` error in the log (the API key was rejected) means the key was invalidated,
+  for example because you generated a new one in the myenergi app. Update the **API Key** field
+  with the current key.
 
 ## Control devices (units 12-18) are missing
 
@@ -39,36 +41,41 @@ See also [Installation](install.md) for the full setup sequence.
 
 ## Home Consumption shows 0
 
-Home Consumption is **derived**, not measured directly: generation + grid import − grid export −
-EV charging. It is intentionally floored at zero and can genuinely read 0 for a moment,
-particularly around export-only periods when the subtraction nets out at or below zero. This is
-expected behavior, not a bug. See [How it works](internals.md#live-power) for the exact formula.
+Home Consumption is **worked out**, not measured directly: generation + grid import − grid export
+− EV charging. It is intentionally never shown below zero, and can genuinely read 0 for a moment,
+particularly around export-only periods when the calculation works out at or below zero. This is
+expected behaviour, not a bug. See [How it works](internals.md#live-power) for the exact formula.
 
-The myenergi app shows house consumption the same way: derived from site generation and grid
-flow, minus what the devices diverted, rather than measured with its own house meter. Brief 0
+The myenergi app works out house consumption the same way: from generation and grid flow, minus
+what the devices used for charging, rather than measuring it with a separate house meter. Brief 0
 readings around export-only moments are expected there too, not just in this plugin.
 
 ## A kWh counter looks wrong after a restart, or after installing the plugin
 
-- Counters **do** start low, near zero, on a fresh install. This is expected, not a bug: the
-  plugin has no way to import your myenergi device's lifetime energy total, and would not want to
-  even if it could, since dropping a large lifetime figure into a Domoticz counter in one step
-  would spike the charts. Instead, on install the plugin seeds each counter's baseline from the
-  device's current cumulative value (zero on a brand-new device) minus today's energy so far,
-  clamped so it never goes below zero, then builds forward from myenergi's own per-minute
+- Counters **do** start low, near zero, on a fresh install, and this is expected, not a bug. The
+  plugin has no way to import your myenergi device's full history, and would not want to even if
+  it could, since dropping a large historical total into a Domoticz counter in one go would put a
+  spike in your charts. Instead, on install the plugin works out a starting point from the
+  device's current value (zero on a brand-new device) and today's energy so far, never letting
+  that starting point go below zero, then builds forward from myenergi's own minute-by-minute
   history. In practice a fresh install starts near today's accumulated energy and climbs from
-  there. See [Accumulate-from-install](internals.md#accumulate-from-install).
-- Counters never decrease and never jump by an implausible amount in one refresh (bounded by the
-  **Max System Power (kW)** setting). An implausible jump is held back and retried on the next
-  refresh rather than applied, so a brief "stuck" value after an unusual event is expected, not a
-  bug.
-- If Domoticz was offline for a while, the plugin backfills up to **14 days** of missed history
-  automatically on the next counter refresh. Gaps beyond 14 days are logged as an error and are
-  not recovered automatically.
-- If a counter's baseline still looks permanently wrong (for example, after an error about
-  backfill being truncated), the only way to force a clean re-seed is to delete the hardware in
-  Domoticz and add it again. This clears the plugin's saved state and every counter re-seeds from
-  the device's live values on the next poll, the same as a fresh install.
+  there. This is a one-time thing at install: it is not something that runs every time the
+  plugin restarts. See [Starting from zero on a new
+  install](internals.md#starting-from-zero-on-a-new-install).
+- Counters never count backwards, and never jump up by an unrealistic amount in a single refresh
+  (how big a jump counts as unrealistic is controlled by the **Max System Power (kW)** setting).
+  An unrealistic jump is held back and retried on the next refresh rather than applied, so a
+  brief "stuck" value after an unusual event is expected, not a bug.
+- If Domoticz was offline for a while after already running successfully, the plugin catches up
+  automatically on the next counter refresh, backfilling up to **14 days** of missed history.
+  This is a catch-up mechanism only, not something that looks back through your myenergi history
+  when you first install the plugin; in normal day-to-day running you will not see any backfill
+  happen, and that is expected. Gaps beyond 14 days are logged as an error and are not recovered
+  automatically.
+- If a counter still looks permanently wrong (for example, after an error about backfill being
+  cut off), the only way to force a clean restart of the counters is to delete the hardware in
+  Domoticz and add it again. This clears the plugin's saved data, and every counter starts fresh
+  from the device's live values on the next poll, the same as a new install.
 
 ## How do I name a harvi?
 
