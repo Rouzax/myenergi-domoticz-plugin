@@ -33,7 +33,7 @@ def test_menu_selector_options_shape():
     assert opts["LevelNames"] == "Off|1%|10%"
     assert opts["LevelActions"] == "||"  # one per option
     assert opts["LevelOffHidden"] == "true"
-    assert opts["SelectorStyle"] == "0"
+    assert opts["SelectorStyle"] == "1"  # dropdown menu, not a button set
 
 
 def test_unit_bearing_labels():

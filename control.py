@@ -157,7 +157,8 @@ def _selector_options(kind, language, style="0"):
     }
 
 
-def _menu_selector_options(labels, style="0"):
+def _menu_selector_options(labels, style="1"):
+    # SelectorStyle "1" = dropdown menu (the long value menus); "0" = button set.
     return {
         "LevelActions": "|" * len(labels),
         "LevelNames": "Off|" + "|".join(labels),
