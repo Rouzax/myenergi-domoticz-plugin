@@ -9,8 +9,8 @@ def test_aggregate_includes_grid_import_export():
 
 
 def test_grid_units_registered_in_agg_units():
-    assert AGG_UNITS["grid_import"] == UNIT_GRID_IMPORT == 10
-    assert AGG_UNITS["grid_export"] == UNIT_GRID_EXPORT == 11
+    assert AGG_UNITS["grid_import"] == UNIT_GRID_IMPORT == 2
+    assert AGG_UNITS["grid_export"] == UNIT_GRID_EXPORT == 3
 
 
 def test_aggregate_today_wh():

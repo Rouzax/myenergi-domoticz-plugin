@@ -9,16 +9,16 @@ separate, opt-in charger control devices, see [Charger control](control.md).
 | Unit | Device name | Domoticz type | What it shows |
 |---|---|---|---|
 | 1 | Solar Total | kWh (Return) | Total solar generation across all inverters on the hub, as instantaneous power plus a cumulative energy counter. |
-| 2 | Home Consumption | kWh | Derived power used by the rest of the house: generation + grid import − grid export − EV charging. See [How it works](internals.md). |
-| 3 | EV Charging | kWh | Power delivered to the vehicle, plus a cumulative energy counter. |
-| 4 | Zappi Mode | Text | Current operating mode: Fast, Eco, Eco+, or Stop. |
-| 5 | Charge Status | Text | Current charge state: Idle, Paused, Diverting, Boosting, or Complete. |
-| 6 | Plug Status | Text | Current plug/connection state: Disconnected, Connected, Charging, or Fault. |
-| 7 | Charge Added | Custom (kWh) | Energy added to the vehicle in the current charging session. |
-| 8 | Grid Voltage | Voltage (V) | Grid/mains voltage. |
-| 9 | Grid Frequency | Custom (Hz) | Grid/mains frequency. |
-| 10 | Grid Import | kWh | Power drawn from the grid, plus a cumulative energy counter. |
-| 11 | Grid Export | kWh (Return) | Power fed back to the grid, plus a cumulative energy counter. |
+| 2 | Grid Import | kWh | Power drawn from the grid, plus a cumulative energy counter. |
+| 3 | Grid Export | kWh (Return) | Power fed back to the grid, plus a cumulative energy counter. |
+| 4 | Home Consumption | kWh | Derived power used by the rest of the house: generation + grid import − grid export − EV charging. See [How it works](internals.md). |
+| 5 | EV Charging | kWh | Power delivered to the vehicle, plus a cumulative energy counter. |
+| 6 | Charge Added | Custom (kWh) | Energy added to the vehicle in the current charging session. |
+| 7 | Zappi Mode | Text | Current operating mode: Fast, Eco, Eco+, or Stop. |
+| 8 | Charge Status | Text | Current charge state: Idle, Paused, Diverting, Boosting, or Complete. |
+| 9 | Plug Status | Text | Current plug/connection state: Disconnected, Connected, Charging, or Fault. |
+| 10 | Grid Voltage | Voltage (V) | Grid/mains voltage. |
+| 11 | Grid Frequency | Custom (Hz) | Grid/mains frequency. |
 
 Solar Total, Home Consumption, EV Charging, Grid Import, and Grid Export all carry both a live
 power reading and a real cumulative kWh counter, built from myenergi's own per-minute energy

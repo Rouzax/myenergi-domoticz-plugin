@@ -141,19 +141,19 @@ def test_onstart_creates_control_devices_when_enabled(monkeypatch):
     units = Domoticz.Devices[device_id(0)].Units
     assert control.UNIT_MODE in units and units[control.UNIT_MODE].Used == 1
     assert control.UNIT_BOOST in units and control.UNIT_MIN_GREEN in units
-    # unit 4 (energy Zappi Mode text) is not created on onStart, so the hide defers
+    # unit 7 (energy Zappi Mode text) is not created on onStart, so the hide defers
     assert plugin._state.mode_text_hidden is False
 
 
-def test_onstart_hides_mode_text_when_unit4_present(monkeypatch):
+def test_onstart_hides_mode_text_when_unit7_present(monkeypatch):
     monkeypatch.setattr(plugin, "MyEnergiClient", _ReconcileClient)
     plugin.Parameters = _params("true")
     # Simulate a restart where the energy Zappi Mode text device already exists and is
     # visible. Unit(...).Create() auto-creates the device in the stub.
     did = device_id(0)
-    Domoticz.Unit(Name="Zappi Mode", DeviceID=did, Unit=4, TypeName="Text", Used=1).Create()
+    Domoticz.Unit(Name="Zappi Mode", DeviceID=did, Unit=7, TypeName="Text", Used=1).Create()
     plugin.onStart()
-    assert Domoticz.Devices[did].Units[4].Used == 0
+    assert Domoticz.Devices[did].Units[7].Used == 0
     assert plugin._state.mode_text_hidden is True
 
 

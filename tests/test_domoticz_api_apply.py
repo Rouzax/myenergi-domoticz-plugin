@@ -70,7 +70,7 @@ def test_deactivate_sets_used_zero():
         did,
         [
             DeviceUpdate(
-                unit=4,
+                unit=7,
                 type_name="Text",
                 options={},
                 name="Zappi Mode",
@@ -80,8 +80,8 @@ def test_deactivate_sets_used_zero():
         ],
         {},
     )
-    deactivate_units(Domoticz.Devices, did, [4])
-    assert Domoticz.Devices[did].Units[4].Used == 0
+    deactivate_units(Domoticz.Devices, did, [7])
+    assert Domoticz.Devices[did].Units[7].Used == 0
 
 
 def test_deactivate_missing_unit_is_noop():
@@ -106,13 +106,13 @@ def test_deactivate_idempotent_skips_update_when_already_hidden():
     apply_updates(
         Domoticz.Devices,
         did,
-        [_u(4, "Zappi Mode", "Eco", tn="Text", opts={})],
+        [_u(7, "Zappi Mode", "Eco", tn="Text", opts={})],
         {},
     )
-    unit = Domoticz.Devices[did].Units[4]
+    unit = Domoticz.Devices[did].Units[7]
     unit.Used = 0
     calls = _spy_update_calls(unit)
-    deactivate_units(Domoticz.Devices, did, [4])
+    deactivate_units(Domoticz.Devices, did, [7])
     assert unit.Used == 0
     assert calls == []
 
@@ -171,10 +171,10 @@ def test_rename_logs_lifecycle_event():
 
 def test_hide_logs_lifecycle_event():
     did = device_id(1)
-    apply_updates(Domoticz.Devices, did, [_u(4, "Zappi Mode", "Eco", tn="Text", opts={})], {})
+    apply_updates(Domoticz.Devices, did, [_u(7, "Zappi Mode", "Eco", tn="Text", opts={})], {})
     Domoticz._log.clear()
-    deactivate_units(Domoticz.Devices, did, [4])
-    assert any("device_hide unit=4" in m for m in Domoticz._log)
+    deactivate_units(Domoticz.Devices, did, [7])
+    assert any("device_hide unit=7" in m for m in Domoticz._log)
 
 
 def test_show_logs_lifecycle_event():
@@ -190,10 +190,10 @@ def test_show_logs_lifecycle_event():
 
 def test_idempotent_hide_does_not_log():
     did = device_id(1)
-    apply_updates(Domoticz.Devices, did, [_u(4, "Zappi Mode", "Eco", tn="Text", opts={})], {})
-    Domoticz.Devices[did].Units[4].Used = 0
+    apply_updates(Domoticz.Devices, did, [_u(7, "Zappi Mode", "Eco", tn="Text", opts={})], {})
+    Domoticz.Devices[did].Units[7].Used = 0
     Domoticz._log.clear()
-    deactivate_units(Domoticz.Devices, did, [4])  # already hidden, no flip
+    deactivate_units(Domoticz.Devices, did, [7])  # already hidden, no flip
     assert not any("device_hide" in m for m in Domoticz._log)
 
 

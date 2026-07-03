@@ -10,8 +10,13 @@ charger, not just a read-only reporting token.
 
 ## Where it is stored
 
-Domoticz stores hardware settings, including the API key, in its own database. The key is kept
-in **cleartext**, not encrypted or hashed.
+Domoticz stores hardware settings, including the API key, in its own database (in the hardware
+settings JSON). The key is kept in **cleartext** there, not encrypted or hashed.
+
+Domoticz does **not** expose the key through its web interface or JSON API: recent versions mask
+the field as dots and strip the value from API responses, so it cannot be read back from the UI or
+over the API once saved. The exposure is therefore the **database file itself**, not the Domoticz
+interface.
 
 !!! warning "Treat the database, and any backup of it, as a secret"
     Anyone with access to your Domoticz database file, or a backup of it, can read the API key

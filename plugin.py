@@ -94,7 +94,7 @@ CONTROL_UNITS = (
     control.UNIT_LOCK_STATE,
 )
 
-UNIT_MODE_TEXT = 4  # Zappi Mode read-only text; hidden once while control is enabled.
+UNIT_MODE_TEXT = 7  # Zappi Mode read-only text; hidden once while control is enabled.
 
 # Debug Level -> Domoticz.Debugging() bitmask. 2 = Python-only (this plugin's own
 # Domoticz.Debug lines); 1 = All (adds framework internals). 0 = off.

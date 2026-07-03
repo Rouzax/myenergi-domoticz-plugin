@@ -18,7 +18,7 @@ start or cancel a boost, or change the Eco+ minimum green percentage from Domoti
   creates and shows the control devices right away, without waiting for the next scheduled poll.
 - Turning **Allow Control off** again hides the control devices (they are not deleted, so their
   last values are preserved) and, as a one-time step, re-shows the **Zappi Mode** text device
-  (unit 4), which is otherwise hidden while control is on since **Charge Mode** duplicates it.
+  (unit 7), which is otherwise hidden while control is on since **Charge Mode** duplicates it.
 
 ## Control devices (units 12-18)
 

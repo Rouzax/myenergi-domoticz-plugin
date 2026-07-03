@@ -70,7 +70,7 @@ def _setup(counter_every=1, last_date="2026-07-01", allow_control=False):
     from persistence import PluginState
 
     domoticz_api.save_state(
-        PluginState(base_wh={"1": 0.0, "2": 0.0, "3": 0.0}, last_processed_date=last_date)
+        PluginState(base_wh={"1": 0.0, "4": 0.0, "5": 0.0}, last_processed_date=last_date)
     )
     return plugin._state
 
@@ -152,7 +152,7 @@ def test_live_beat_persists_auto_names_on_device_creation():
         "20",
     }
     assert auto_names["1"] == "Solar Total"
-    assert auto_names["4"] == "Zappi Mode"
+    assert auto_names["7"] == "Zappi Mode"
     # The harvi's serial -> Unit allocation is persisted so it survives restarts.
     unit_alloc = json.loads(state_json).get("unit_alloc", {})
     assert unit_alloc == {"19000001": 20}
@@ -163,8 +163,8 @@ def test_heartbeat_creates_grid_and_harvi_devices():
     plugin.onHeartbeat()  # beat 1 -> refresh
     did = device_id(0)
     units = Domoticz.Devices[did].Units
-    assert "10" in [str(k) for k in units] or 10 in units  # Grid Import
-    assert 11 in units  # Grid Export
+    assert "2" in [str(k) for k in units] or 2 in units  # Grid Import
+    assert 3 in units  # Grid Export
     assert 20 in units  # first harvi power device
     assert units[20].sValue == "250"  # 100+100+50
 
@@ -187,8 +187,8 @@ def test_heartbeat_caches_validated_serial_and_hides_mode_text_once():
     plugin.onHeartbeat()
     assert st.zappi_serial == "20000002"
     did = device_id(0)
-    # Mode Text (unit 4) is hidden once Charge Mode (unit 12) takes over.
-    assert Domoticz.Devices[did].Units[4].Used == 0
+    # Mode Text (unit 7) is hidden once Charge Mode (unit 12) takes over.
+    assert Domoticz.Devices[did].Units[7].Used == 0
     assert st.mode_text_hidden is True
 
 
@@ -197,7 +197,7 @@ def test_heartbeat_no_control_updates_when_gate_off():
     plugin.onHeartbeat()
     did = device_id(0)
     assert 12 not in Domoticz.Devices[did].Units  # no Charge Mode device created
-    assert Domoticz.Devices[did].Units[4].Used == 1  # Mode Text stays visible
+    assert Domoticz.Devices[did].Units[7].Used == 1  # Mode Text stays visible
     assert plugin._state.mode_text_hidden is False
 
 
@@ -208,14 +208,14 @@ def test_heartbeat_hides_control_devices_when_control_disabled():
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 1
     assert Domoticz.Devices[did].Units[control.UNIT_BOOST].Used == 1
 
-    assert Domoticz.Devices[did].Units[4].Used == 0  # Mode Text hidden while control on
+    assert Domoticz.Devices[did].Units[7].Used == 0  # Mode Text hidden while control on
 
     st.config.allow_control = False
     plugin.onHeartbeat()
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 0
     assert Domoticz.Devices[did].Units[control.UNIT_BOOST].Used == 0
-    # Zappi Mode text (unit 4) is re-shown when control is disabled (symmetric).
-    assert Domoticz.Devices[did].Units[4].Used == 1
+    # Zappi Mode text (unit 7) is re-shown when control is disabled (symmetric).
+    assert Domoticz.Devices[did].Units[7].Used == 1
     assert st.mode_text_hidden is False
 
 
@@ -413,8 +413,8 @@ def test_heartbeat_reconciles_control_when_enabled():
     # control devices created and shown
     assert control.UNIT_MODE in units and units[control.UNIT_MODE].Used == 1
     assert control.UNIT_BOOST in units
-    # one-time Zappi Mode text (unit 4) hidden, flag set
-    assert units[4].Used == 0
+    # one-time Zappi Mode text (unit 7) hidden, flag set
+    assert units[7].Used == 0
     assert plugin._state.mode_text_hidden is True
 
 
@@ -427,4 +427,4 @@ def test_heartbeat_hides_control_when_disabled():
         if u in units:
             assert units[u].Used == 0
     # Zappi Mode text stays visible when control is off
-    assert units[4].Used == 1
+    assert units[7].Used == 1

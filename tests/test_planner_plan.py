@@ -64,7 +64,7 @@ def test_live_beat_clamps_negative_prior_counter():
 
 def test_live_beat_remaining_devices():
     # Covers the five units not asserted in test_live_beat_keeps_prior_energy:
-    # Home (2), EV (3), Zappi Mode (4), Charge Status (5), Frequency (9).
+    # Home (4), EV (5), Zappi Mode (7), Charge Status (8), Frequency (11).
     # Fixture: gen=1215, grd=734, div=0, che=2.34, frq=49.96, zmo=1, sta=4, pst="A"
     state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: 5000.0}
@@ -93,8 +93,8 @@ def test_live_beat_remaining_devices():
 
 
 def test_refresh_beat_sets_counter_from_base_plus_today():
-    state = PluginState(base_wh={"1": 4000.0, "2": 0.0, "3": 0.0}, last_processed_date="2026-07-01")
-    prev = {UNIT_SOLAR: 4000.0, 2: 0.0, UNIT_EV: 0.0}
+    state = PluginState(base_wh={"1": 4000.0, "4": 0.0, "5": 0.0}, last_processed_date="2026-07-01")
+    prev = {UNIT_SOLAR: 4000.0, UNIT_HOME: 0.0, UNIT_EV: 0.0}
     today = {"gep": 3_600_000}  # +1000 Wh solar today
     updates, _ = plan(STATUS, today, state, prev, CFG, max_step_wh=1e6)
     u = _by_unit(updates)
