@@ -1,4 +1,4 @@
-from model import CT, Device
+from model import CT, Device, parse_jstatus
 from planner import assign_harvi_units, plan_harvi_updates
 
 
@@ -61,3 +61,49 @@ def test_non_generation_harvi_negative_value_stays_signed():
     h = Device(kind="harvi", serial="22000001", cts=[CT(1, "other", -50)])
     ups = plan_harvi_updates([h], {"22000001": 20}, {}, "English")
     assert ups[0].svalue == "-50"
+
+
+def _harvi_updates_from_raw(*harvi_raws):
+    status = parse_jstatus([{"harvi": list(harvi_raws)}])
+    harvis = [d for d in status.devices if d.kind == "harvi"]
+    units = assign_harvi_units({}, [h.serial for h in harvis])
+    return plan_harvi_updates(harvis, units, {}, "English"), harvis
+
+
+def test_none_cts_excluded_from_harvi_power_sum():
+    ups, _ = _harvi_updates_from_raw(
+        {
+            "sno": "19000001",
+            "ectt1": "Generation",
+            "ectt2": "Generation",
+            "ectt3": "None",
+            "ectp1": 100,
+            "ectp2": 200,
+            "ectp3": 999,
+        }
+    )
+    assert ups[0].type_name == "Usage"
+    assert ups[0].svalue == "300"  # 100 + 200; the None CT's 999 is excluded
+
+
+def test_dcpv_harvi_renders_as_generation():
+    ups, _ = _harvi_updates_from_raw({"sno": "19000001", "ectt1": "DCPV", "ectp1": 250})
+    assert ups[0].type_name == "Usage" and ups[0].image == 19 and ups[0].svalue == "250"
+
+
+def test_all_none_harvi_has_no_cts_and_zero_power():
+    ups, harvis = _harvi_updates_from_raw(
+        {"sno": "19000001", "ectt1": "None", "ectt2": " ", "ectp1": 5, "ectp2": 6}
+    )
+    assert harvis[0].cts == []
+    assert len(ups) == 1 and ups[0].svalue == "0"
+
+
+def test_multiple_harvis_classify_independently():
+    ups, harvis = _harvi_updates_from_raw(
+        {"sno": "19000001", "ectt1": "Generation", "ectp1": 100},
+        {"sno": "22000001", "ectt1": "AC Battery", "ectp1": -50},
+    )
+    kinds = {h.serial: u.type_name for h, u in zip(harvis, ups)}
+    assert kinds["19000001"] == "Usage"  # generation tile
+    assert kinds["22000001"] == "Custom"  # battery -> signed tile

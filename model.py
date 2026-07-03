@@ -35,11 +35,18 @@ def harvi_names_from_slots(params: dict, slots: int = 4) -> "dict[str, str]":
     return out
 
 
-ROLE_BY_CTT = {
-    "Generation": "solar",
-    "Grid": "grid",
-    "Internal Load": "ev",
+# myenergi CT-type (ectt) -> internal role, matched case-insensitively and trimmed.
+# Confirmed ectt strings (twonk API ref): Grid, Generation, Internal Load, DCPV, None, "".
+# Unlisted types (Internal Load, AC Battery, Storage, Monitor, Load, and any unknown) -> "other"
+# via the fallback, which renders as the bidirectional signed tile (correct for batteries/loads).
+_ROLE_BY_CTT = {
+    "grid": "grid",
+    "generation": "solar",
+    "dcpv": "solar",  # DC-coupled/hybrid inverter AC output; myenergi treats it as generation
 }
+
+# Unassigned CT types: the CT is dropped, never summed into a device's power.
+_EXCLUDE_CTT = {"none", ""}
 
 
 @dataclass
@@ -69,7 +76,10 @@ def _extract_cts(raw: dict) -> "list[CT]":
         ctt = raw.get(f"ectt{i}")
         if ctt is None:
             continue
-        role = ROLE_BY_CTT.get(str(ctt), "other")
+        key = str(ctt).strip().lower()
+        if key in _EXCLUDE_CTT:
+            continue
+        role = _ROLE_BY_CTT.get(key, "other")
         cts.append(CT(index=i, role=role, power_w=int(raw.get(f"ectp{i}", 0) or 0)))
     return cts
 
