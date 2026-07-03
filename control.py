@@ -23,6 +23,10 @@ ZMO_TO_LEVEL = {1: 10, 2: 20, 3: 30, 4: 40}
 MAX_KWH = 100
 MAX_GREEN = 100
 
+BOOST_KWH_MENU = (0, 5, 10, 20, 40, 60, 80, 99)
+COMPLETE_BY_MENU = tuple(h * 100 for h in range(24))
+MIN_GREEN_MENU = (1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+
 LCK_BITS = (
     (0, "Locked Now"),
     (1, "EV Plugged"),
@@ -37,6 +41,18 @@ def _finite(value) -> bool:
         return math.isfinite(float(value))
     except (TypeError, ValueError, OverflowError):
         return False
+
+
+def menu_value(menu, level) -> "int | None":
+    if not _finite(level):
+        return None
+    i = int(level) // 10 - 1
+    return menu[i] if 0 <= i < len(menu) else None
+
+
+def menu_level(menu, value) -> int:
+    i = min(range(len(menu)), key=lambda k: abs(menu[k] - value))
+    return (i + 1) * 10
 
 
 def validate_kwh(level) -> "int | None":
@@ -154,6 +170,27 @@ def _setpoint_options(unit_label, vmin, vmax, step):
         "ValueMax": str(vmax),
         "ValueStep": str(step),
     }
+
+
+def _menu_selector_options(labels, style="0"):
+    return {
+        "LevelActions": "|" * len(labels),
+        "LevelNames": "Off|" + "|".join(labels),
+        "LevelOffHidden": "true",
+        "SelectorStyle": style,
+    }
+
+
+def _boost_kwh_options():
+    return _menu_selector_options([f"{v} kWh" for v in BOOST_KWH_MENU])
+
+
+def _complete_by_options():
+    return _menu_selector_options([f"{h:02d}:00" for h in range(24)])
+
+
+def _min_green_options():
+    return _menu_selector_options([f"{v}%" for v in MIN_GREEN_MENU])
 
 
 def optimistic_update(unit, command, level, language) -> "DeviceUpdate | None":
