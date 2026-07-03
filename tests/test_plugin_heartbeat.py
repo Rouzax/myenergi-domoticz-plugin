@@ -208,10 +208,15 @@ def test_heartbeat_hides_control_devices_when_control_disabled():
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 1
     assert Domoticz.Devices[did].Units[control.UNIT_BOOST].Used == 1
 
+    assert Domoticz.Devices[did].Units[4].Used == 0  # Mode Text hidden while control on
+
     st.config.allow_control = False
     plugin.onHeartbeat()
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 0
     assert Domoticz.Devices[did].Units[control.UNIT_BOOST].Used == 0
+    # Zappi Mode text (unit 4) is re-shown when control is disabled (symmetric).
+    assert Domoticz.Devices[did].Units[4].Used == 1
+    assert st.mode_text_hidden is False
 
 
 def test_heartbeat_reshows_control_devices_when_control_reenabled():

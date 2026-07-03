@@ -349,6 +349,10 @@ def onHeartbeat():
             domoticz_api.activate_units(devices, did, CONTROL_UNITS)
         else:
             domoticz_api.deactivate_units(devices, did, CONTROL_UNITS)
+            if st.mode_text_hidden:
+                domoticz_api.activate_units(devices, did, [4])
+                st.mode_text_hidden = False
+                domoticz_api.save_state(_persist_state(st))
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
