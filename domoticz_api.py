@@ -17,13 +17,17 @@ def _existing_unit(devices, dev_id, unit):
     return dev.Units.get(unit)
 
 
-def apply_updates(devices, dev_id, updates, auto_names) -> dict:
+def apply_updates(devices, dev_id, updates, auto_names, allow_create=True) -> dict:
     names = dict(auto_names)
     created = 0
     renamed = 0
-    for up in updates:
+    # Create in ascending unit order: Domoticz shows devices in creation order, so
+    # this keeps the on-disk layout matching the logical unit numbering.
+    for up in sorted(updates, key=lambda u: u.unit):
         unit = _existing_unit(devices, dev_id, up.unit)
         if unit is None:
+            if not allow_create:
+                continue
             Domoticz.Unit(
                 Name=up.name,
                 DeviceID=dev_id,
