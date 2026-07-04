@@ -293,6 +293,7 @@ def onHeartbeat():
         Domoticz.Debug(f"heartbeat beat={st.beat} refresh={is_refresh} hub_date={hub_date}")
 
         now = time.monotonic()
+        before_names = st.auto_names
 
         if is_refresh and hub_date:
             state = domoticz_api.load_state()
@@ -313,25 +314,33 @@ def onHeartbeat():
                 state, backfill, today_raw, prev, AGG_UNITS, st.config.max_system_kw, hub_date
             )
             updates, state = plan(status, today_raw, state, prev, st.config, max_step)
-            updates = updates + plan_harvi_updates(
-                harvis, st.unit_alloc, st.config.harvi_names, st.config.language
-            )
-            st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
-            state = replace(state, auto_names=st.auto_names, unit_alloc=st.unit_alloc)
-            domoticz_api.save_state(state)
         else:
             # Live beat (or refresh with no hub date): update power/status only.
             # No load_state (base_wh is unused when today_sums is None).
-            before_names = st.auto_names
             updates, _ = plan(status, None, PluginState(), prev, st.config, max_step)
-            updates = updates + plan_harvi_updates(
-                harvis, st.unit_alloc, st.config.harvi_names, st.config.language
-            )
-            st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
-            if st.auto_names != before_names or alloc_changed:
-                domoticz_api.save_state(_persist_state(st))
+            state = None
 
+        # Create/update in ascending unit order so a fresh install lays out logically:
+        # monitoring (1-11), then control (12-18), then harvi (20+). Domoticz shows
+        # devices in creation order.
+        st.auto_names = domoticz_api.apply_updates(devices, did, updates, st.auto_names)
         _reconcile_control(st, devices, did, status, now)
+        harvi_updates = plan_harvi_updates(
+            harvis, st.unit_alloc, st.config.harvi_names, st.config.language
+        )
+        st.auto_names = domoticz_api.apply_updates(devices, did, harvi_updates, st.auto_names)
+
+        if state is not None:
+            state = replace(
+                state,
+                auto_names=st.auto_names,
+                unit_alloc=st.unit_alloc,
+                mode_text_hidden=st.mode_text_hidden,
+                control_shown=st.control_shown,
+            )
+            domoticz_api.save_state(state)
+        elif st.auto_names != before_names or alloc_changed:
+            domoticz_api.save_state(_persist_state(st))
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
             Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
@@ -392,7 +401,7 @@ def _filter_control_updates(devices, did, updates, reconcile_suppress, now):
     return kept
 
 
-def _reconcile_control(st, devices, did, status, now):
+def _reconcile_control(st, devices, did, status, now, allow_create=True):
     before_names = st.auto_names
     before_hidden = st.mode_text_hidden
     before_shown = st.control_shown
@@ -400,7 +409,9 @@ def _reconcile_control(st, devices, did, status, now):
     control_updates = _filter_control_updates(
         devices, did, control_updates, st.reconcile_suppress, now
     )
-    st.auto_names = domoticz_api.apply_updates(devices, did, control_updates, st.auto_names)
+    st.auto_names = domoticz_api.apply_updates(
+        devices, did, control_updates, st.auto_names, allow_create=allow_create
+    )
     if st.config.allow_control:
         # Keep control device names following the language even for input-only units
         # (Boost kWh/Ready-By) that plan_control_updates never re-emits after creation.
@@ -450,7 +461,11 @@ def _initial_control_reconcile(st):
         if not status.zappi:
             return
         did = domoticz_api.device_id(_hardware_id())
-        _reconcile_control(st, devices, did, status, time.monotonic())
+        # Reconcile-only: never create control devices here. On a fresh install the
+        # monitoring devices do not exist yet, so creating control now would place it
+        # ahead of them in Domoticz's creation-ordered layout. The first heartbeat
+        # creates every device in ascending unit order instead.
+        _reconcile_control(st, devices, did, status, time.monotonic(), allow_create=False)
         Domoticz.Debug("onStart control reconcile applied")
     except Exception as exc:  # noqa: BLE001 - onStart must never crash the framework
         domoticz_api.log_redacted(

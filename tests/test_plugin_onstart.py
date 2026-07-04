@@ -134,14 +134,18 @@ def _params(allow):
     return {"Username": "20000002", "ApiKey": "k", "AllowControl": allow}
 
 
-def test_onstart_creates_control_devices_when_enabled(monkeypatch):
+def test_onstart_does_not_create_control_on_fresh_install(monkeypatch):
+    # Control devices are NOT created on onStart: on a fresh install the monitoring
+    # devices do not exist yet, so creating control now would sort it ahead of them
+    # in Domoticz's creation-ordered layout. The first heartbeat creates every device
+    # in ascending unit order. onStart only reconciles devices that already exist.
     monkeypatch.setattr(plugin, "MyEnergiClient", _ReconcileClient)
     plugin.Parameters = _params("true")
     plugin.onStart()
-    units = Domoticz.Devices[device_id(0)].Units
-    assert control.UNIT_MODE in units and units[control.UNIT_MODE].Used == 1
-    assert control.UNIT_BOOST in units and control.UNIT_MIN_GREEN in units
-    # unit 7 (energy Zappi Mode text) is not created on onStart, so the hide defers
+    dev = Domoticz.Devices.get(device_id(0))
+    created = list(dev.Units.keys()) if dev is not None else []
+    assert control.UNIT_MODE not in created
+    assert control.UNIT_BOOST not in created
     assert plugin._state.mode_text_hidden is False
 
 

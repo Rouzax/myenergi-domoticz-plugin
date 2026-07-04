@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Create devices in ascending unit order on a fresh install, so the logical layout (monitoring
+  1-11, control 12-18, harvi 20+) also matches Domoticz's creation-ordered device list. Previously
+  control was created on start (before the monitoring devices existed) and monitoring/harvi were
+  emitted out of unit order, so devices did not sit next to each other. Existing installs are
+  unaffected (devices are only created once).
+
 ## [1.0.2] - 2026-07-03
 
 ### Fixed

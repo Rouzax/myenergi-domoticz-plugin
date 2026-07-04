@@ -247,6 +247,16 @@ def test_heartbeat_reshows_control_devices_on_off_then_on_toggle():
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].Used == 1
 
 
+def test_devices_created_in_ascending_unit_order():
+    # Domoticz shows devices in creation order, so a fresh install must create them
+    # in ascending unit order: monitoring (1-11), control (12-18), then harvi (20+).
+    _setup(counter_every=1, allow_control=True)
+    plugin.onHeartbeat()  # first beat on a fresh install creates every device
+    did = device_id(0)
+    created = list(Domoticz.Devices[did].Units.keys())
+    assert created == sorted(created), f"units created out of order: {created}"
+
+
 def test_control_device_name_translates_on_language_switch():
     # A language switch must re-translate a control device name even when its value
     # is unchanged: the no-op filter drops value-unchanged updates, but an owned
@@ -313,9 +323,9 @@ def test_control_unchanged_value_not_reapplied_on_live_beat(monkeypatch):
     calls = []
     orig_apply = plugin.domoticz_api.apply_updates
 
-    def _spy(devices, dev_id, updates, auto_names):
+    def _spy(devices, dev_id, updates, auto_names, allow_create=True):
         calls.append(list(updates))
-        return orig_apply(devices, dev_id, updates, auto_names)
+        return orig_apply(devices, dev_id, updates, auto_names, allow_create=allow_create)
 
     monkeypatch.setattr(plugin.domoticz_api, "apply_updates", _spy)
 
@@ -324,9 +334,9 @@ def test_control_unchanged_value_not_reapplied_on_live_beat(monkeypatch):
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 10
 
     plugin._state.beat = 2  # next beat -> 3, live (not first, 3 % 2 != 0)
+    calls.clear()
     plugin.onHeartbeat()  # zmo unchanged -> no-op, dropped before apply_updates
-    live_updates = calls[-1]
-    assert not any(u.unit == control.UNIT_MODE for u in live_updates)
+    assert not any(u.unit == control.UNIT_MODE for c in calls for u in c)
     assert Domoticz.Devices[did].Units[control.UNIT_MODE].nValue == 10
 
 
