@@ -1,6 +1,6 @@
 # pyright: reportMissingImports=false, reportUndefinedVariable=false, reportAttributeAccessIssue=false
 """\
-<plugin key="myenergi" name="myenergi Monitor" author="Rouzax" version="1.0.2" externallink="https://github.com/Rouzax/myenergi-domoticz-plugin">
+<plugin key="myenergi" name="myenergi Monitor" author="Rouzax" version="1.0.3" externallink="https://github.com/Rouzax/myenergi-domoticz-plugin">
     <description>
         <h2>myenergi cloud monitor (read-only)</h2>
         <p>Reads your myenergi system (zappi, harvi) via the cloud API and creates Solar Total, Home Consumption, EV Charging (real kWh counters), plus mode/status/voltage/frequency devices.</p>
