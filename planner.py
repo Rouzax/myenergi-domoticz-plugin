@@ -4,7 +4,7 @@ from dataclasses import dataclass, replace
 from datetime import date, timedelta
 
 import translations
-from energy import clamp_counter, seed_base_wh
+from energy import clamp_counter, lifetime_ceiling_wh, seed_base_wh
 from model import deci_volts_to_v, joules_to_wh
 from persistence import PluginState
 
@@ -36,7 +36,7 @@ def advance_baselines(
     state, backfill_day_sums, today_sums, prev_counters, agg_units, max_system_kw, hub_date
 ) -> PluginState:
     base = dict(state.base_wh)
-    ceiling = max_system_kw * 1000.0 * 24.0 * 3650.0  # ~10y lifetime ceiling in Wh
+    ceiling = lifetime_ceiling_wh(max_system_kw)
 
     # Fold each fully-completed missing day once into the baseline.
     for day in backfill_day_sums:
@@ -122,7 +122,7 @@ def _float(v):
         return 0.0
 
 
-def plan(status, today_sums, state, prev_counters, config, max_step_wh):
+def plan(status, today_sums, state, prev_counters, config):
     z = status.zappi
     lang = config.language
     gen, grd, div = _int(z.get("gen")), _int(z.get("grd")), _int(z.get("div"))
@@ -134,16 +134,20 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
         "grid_export": max(0, -grd),
     }
 
+    holds = []
     if today_sums is None:
         energies = {n: prev_counters.get(u, 0.0) for n, u in AGG_UNITS.items()}
         new_state = state
     else:
         today = aggregate_today_wh(today_sums)
+        ceiling = lifetime_ceiling_wh(config.max_system_kw)
         energies = {}
         for name, unit in AGG_UNITS.items():
             candidate = state.base_wh.get(str(unit), 0.0) + today[name]
             prev = prev_counters.get(unit, 0.0)
-            energies[name], _warn = clamp_counter(prev, candidate, max_step_wh)
+            energies[name], warn = clamp_counter(prev, candidate, ceiling)
+            if warn is not None:
+                holds.append((unit, warn))
         new_state = state
 
     # A kWh meter never renders below zero, even if a device persisted a negative counter.
@@ -199,7 +203,7 @@ def plan(status, today_sums, state, prev_counters, config, max_step_wh):
             switchtype=RETURN_SWITCHTYPE,
         ),
     ]
-    return updates, new_state
+    return updates, new_state, holds
 
 
 HARVI_UNIT_START = 20

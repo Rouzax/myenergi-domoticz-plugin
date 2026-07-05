@@ -3,11 +3,23 @@
 from datetime import date, timedelta
 
 
-def clamp_counter(prev_wh, candidate_wh, max_step_wh):
+def lifetime_ceiling_wh(max_system_kw: float) -> float:
+    """Absolute plausibility ceiling for a cumulative counter: ~10 years at full
+    system power, in Wh. Used to reject only genuinely corrupt values, not to cap
+    the per-refresh step."""
+    return max_system_kw * 1000.0 * 24.0 * 3650.0
+
+
+def clamp_counter(prev_wh, candidate_wh, ceiling_wh):
+    # The refresh candidate is base + myenergi's authoritative whole-day sum, so it is
+    # trusted: guard only against going backwards (monotonic) and against an absurd
+    # absolute value (corrupt fetch). A large legitimate jump - a lagging counter
+    # catching up after a mid-day install or an offline backfill - must be allowed,
+    # otherwise the counter sticks below the truth forever.
     if candidate_wh < prev_wh:
-        return prev_wh, f"counter decrease held: {candidate_wh:.1f} < {prev_wh:.1f}"
-    if candidate_wh > prev_wh + max_step_wh:
-        return prev_wh, f"implausible counter step held: +{candidate_wh - prev_wh:.1f} Wh"
+        return prev_wh, f"decrease held: {candidate_wh:.1f} < {prev_wh:.1f}"
+    if candidate_wh > ceiling_wh:
+        return prev_wh, f"over ceiling held: {candidate_wh:.1f} > {ceiling_wh:.1f}"
     return candidate_wh, None
 
 

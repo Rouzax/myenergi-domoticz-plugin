@@ -1,6 +1,6 @@
 # pyright: reportMissingImports=false, reportUndefinedVariable=false, reportAttributeAccessIssue=false
 """\
-<plugin key="myenergi" name="myenergi Monitor" author="Rouzax" version="1.0.3" externallink="https://github.com/Rouzax/myenergi-domoticz-plugin">
+<plugin key="myenergi" name="myenergi Monitor" author="Rouzax" version="1.0.4" externallink="https://github.com/Rouzax/myenergi-domoticz-plugin">
     <description>
         <h2>myenergi cloud monitor (read-only)</h2>
         <p>Reads your myenergi system (zappi, harvi) via the cloud API and creates Solar Total, Home Consumption, EV Charging (real kWh counters), plus mode/status/voltage/frequency devices.</p>
@@ -258,9 +258,18 @@ def onHeartbeat():
         st.beat += 1
         did = domoticz_api.device_id(_hardware_id())
         t0 = time.monotonic()
-        status = parse_jstatus(st.client.fetch_status())
+        try:
+            status = parse_jstatus(st.client.fetch_status())
+        except Exception:
+            # Time the failure too: a slow error (timeout) is the most useful case.
+            Domoticz.Debug(
+                f"fetch_status beat={st.beat} "
+                f"duration_ms={(time.monotonic() - t0) * 1000:.0f} outcome=error"
+            )
+            raise
         Domoticz.Debug(
-            f"fetch_status duration_ms={(time.monotonic() - t0) * 1000:.0f} outcome=success"
+            f"fetch_status beat={st.beat} duration_ms={(time.monotonic() - t0) * 1000:.0f} "
+            f"outcome=success devices={len(status.devices)}"
         )
         if not status.zappi:
             Domoticz.Debug("skip reason=no_zappi")
@@ -270,7 +279,7 @@ def onHeartbeat():
             st.zappi_serial = zappi_dev.serial
         harvis = [d for d in status.devices if d.kind == "harvi"]
         Domoticz.Debug(
-            f"status zappi={status.zappi.get('sno')} gen={status.zappi.get('gen')} "
+            f"status beat={st.beat} zappi={status.zappi.get('sno')} gen={status.zappi.get('gen')} "
             f"grd={status.zappi.get('grd')} div={status.zappi.get('div')} "
             f"sta={status.zappi.get('sta')} pst={status.zappi.get('pst')} "
             f"vol={status.zappi.get('vol')} frq={status.zappi.get('frq')} harvis={len(harvis)}"
@@ -284,8 +293,6 @@ def onHeartbeat():
         alloc_changed = new_alloc != st.unit_alloc
         st.unit_alloc = new_alloc
         prev = domoticz_api.read_prev_counters(devices, did, list(AGG_UNITS.values()))
-        refresh_seconds = st.config.live_interval * st.config.counter_multiple
-        max_step = st.config.max_system_kw * 1000.0 * (refresh_seconds / 3600.0) * 4.0
         serial = st.config.hub_serial
 
         is_refresh = st.beat == 1 or (st.beat % st.counter_every) == 0
@@ -307,17 +314,23 @@ def onHeartbeat():
                     st.config.api_key,
                 )
                 missing = missing[:_MAX_BACKFILL_DAYS]
-            Domoticz.Debug(f"counter refresh hub_date={hub_date} backfill_days={len(missing)}")
+            Domoticz.Debug(
+                f"counter refresh beat={st.beat} hub_date={hub_date} backfill_days={len(missing)}"
+            )
             backfill = [parse_jday(st.client.fetch_jday("Z", serial, d)) for d in missing]
             today_raw = parse_jday(st.client.fetch_jday("Z", serial, hub_date))
             state = advance_baselines(
                 state, backfill, today_raw, prev, AGG_UNITS, st.config.max_system_kw, hub_date
             )
-            updates, state = plan(status, today_raw, state, prev, st.config, max_step)
+            updates, state, holds = plan(status, today_raw, state, prev, st.config)
+            for unit, warn in holds:
+                # A held counter is a data-quality WARN: after the ceiling fix this is
+                # rare (a genuine decrease or corrupt value), so it never spams.
+                Domoticz.Log(f"counter held beat={st.beat} unit={unit} {warn}")
         else:
             # Live beat (or refresh with no hub date): update power/status only.
             # No load_state (base_wh is unused when today_sums is None).
-            updates, _ = plan(status, None, PluginState(), prev, st.config, max_step)
+            updates, _, _ = plan(status, None, PluginState(), prev, st.config)
             state = None
 
         # Create/update in ascending unit order so a fresh install lays out logically:
@@ -343,7 +356,7 @@ def onHeartbeat():
             domoticz_api.save_state(_persist_state(st))
     except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
         domoticz_api.log_redacted(
-            Domoticz.Error, f"myenergi heartbeat error: {exc}", st.config.api_key
+            Domoticz.Error, f"myenergi heartbeat error beat={st.beat}: {exc}", st.config.api_key
         )
 
 
