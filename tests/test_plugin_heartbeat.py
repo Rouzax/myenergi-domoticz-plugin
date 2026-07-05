@@ -173,9 +173,13 @@ def test_verbose_logging_emits_status_and_timing():
     _setup(counter_every=1)
     plugin.onHeartbeat()
     log = Domoticz._log
-    assert any(line.startswith("status zappi=") and "harvis=" in line for line in log)
+    assert any(line.startswith("status beat=") and "harvis=" in line for line in log)
     assert any(
-        line.startswith("fetch_status duration_ms=") and "outcome=success" in line for line in log
+        line.startswith("fetch_status beat=")
+        and "duration_ms=" in line
+        and "outcome=success" in line
+        and "devices=" in line
+        for line in log
     )
     assert any(line.startswith("apply units=") for line in log)
     # FB14: per-harvi summed watts logged at Debug, keyed by serial.

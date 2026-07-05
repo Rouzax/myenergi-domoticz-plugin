@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.4] - 2026-07-05
 
 ### Fixed
 
@@ -20,6 +20,8 @@ All notable changes to this project are documented here. The format is based on
 
 - Held or decreased counters are now logged (the clamp warning was previously discarded), so a
   counter that is held back or corrected is visible in the plugin log instead of failing silently.
+- Verbose logging polish: the cloud fetch now times failures as well as successes and records how
+  many devices came back, and the per-heartbeat log lines carry a `beat=` correlation field.
 
 ## [1.0.3] - 2026-07-04
 
