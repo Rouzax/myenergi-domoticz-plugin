@@ -30,7 +30,7 @@ def _by_unit(updates):
 def test_solar_power_clamped_non_negative():
     # Inverter standby can read gen slightly negative at night; a PV tile never shows < 0.
     status = SystemStatus(devices=[], zappi={"gen": -4, "grd": 500, "div": 0}, zappi_lck=None)
-    updates, _ = plan(status, None, PluginState(), {UNIT_SOLAR: 1000.0}, CFG, max_step_wh=1e6)
+    updates, _, _ = plan(status, None, PluginState(), {UNIT_SOLAR: 1000.0}, CFG)
     u = _by_unit(updates)
     assert u[UNIT_SOLAR].svalue.startswith("0;")
 
@@ -38,7 +38,7 @@ def test_solar_power_clamped_non_negative():
 def test_live_beat_keeps_prior_energy():
     state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: 5000.0}
-    updates, new_state = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
+    updates, new_state, _ = plan(STATUS, None, state, prev, CFG)
     u = _by_unit(updates)
     # Solar power = gen (1215); energy kept at prev 5000.0
     assert u[UNIT_SOLAR].type_name == "kWh"
@@ -57,7 +57,7 @@ def test_live_beat_clamps_negative_prior_counter():
     # seed fix) must never render a negative kWh energy: the display clamps at 0.
     state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: -500.0}
-    updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
+    updates, _, _ = plan(STATUS, None, state, prev, CFG)
     u = _by_unit(updates)
     assert u[UNIT_SOLAR].svalue == "1215;0.0000"
 
@@ -68,7 +68,7 @@ def test_live_beat_remaining_devices():
     # Fixture: gen=1215, grd=734, div=0, che=2.34, frq=49.96, zmo=1, sta=4, pst="A"
     state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: 5000.0}
-    updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
+    updates, _, _ = plan(STATUS, None, state, prev, CFG)
     u = _by_unit(updates)
 
     # Home: power = max(0, gen + grd - div) = 1215 + 734 - 0 = 1949; energy = prev 0.0
@@ -96,15 +96,30 @@ def test_refresh_beat_sets_counter_from_base_plus_today():
     state = PluginState(base_wh={"1": 4000.0, "4": 0.0, "5": 0.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: 4000.0, UNIT_HOME: 0.0, UNIT_EV: 0.0}
     today = {"gep": 3_600_000}  # +1000 Wh solar today
-    updates, _ = plan(STATUS, today, state, prev, CFG, max_step_wh=1e6)
+    updates, _, _ = plan(STATUS, today, state, prev, CFG)
     u = _by_unit(updates)
     assert u[UNIT_SOLAR].svalue == "1215;5000.0000"  # 4000 base + 1000 today
+
+
+def test_refresh_catches_up_from_stuck_counter():
+    # The empty-kWh bug: a device stuck far below the authoritative base+today (e.g.
+    # 0 after a mid-day install) must jump straight to base+today on a refresh, not
+    # stay held below it. base 40000 + today 1000 -> 41000, even though prev is 0.
+    state = PluginState(
+        base_wh={"1": 40000.0, "4": 0.0, "5": 0.0}, last_processed_date="2026-07-01"
+    )
+    prev = {UNIT_SOLAR: 0.0, UNIT_HOME: 0.0, UNIT_EV: 0.0}
+    today = {"gep": 3_600_000}  # +1000 Wh solar today
+    updates, _, holds = plan(STATUS, today, state, prev, CFG)
+    u = _by_unit(updates)
+    assert u[UNIT_SOLAR].svalue == "1215;41000.0000"
+    assert holds == []  # a legitimate catch-up is not a held/warned event
 
 
 def test_plan_emits_grid_import_export():
     # fixture zappi: gen=1215, grd=734, div=0 -> import 734 W, export 0 W
     state = PluginState(base_wh={}, last_processed_date="2026-07-01")
-    updates, _ = plan(STATUS, None, state, {}, CFG, max_step_wh=1e6)
+    updates, _, _ = plan(STATUS, None, state, {}, CFG)
     u = _by_unit(updates)
     assert u[UNIT_GRID_IMPORT].type_name == "kWh"
     assert u[UNIT_GRID_IMPORT].options == {"EnergyMeterMode": "0"}
@@ -115,7 +130,7 @@ def test_plan_emits_grid_import_export():
 def test_solar_total_has_return_switchtype():
     state = PluginState(base_wh={"1": 4000.0}, last_processed_date="2026-07-01")
     prev = {UNIT_SOLAR: 5000.0}
-    updates, _ = plan(STATUS, None, state, prev, CFG, max_step_wh=1e6)
+    updates, _, _ = plan(STATUS, None, state, prev, CFG)
     u = _by_unit(updates)
     assert u[UNIT_SOLAR].switchtype == 4  # Return (generation)
     assert u[UNIT_HOME].switchtype == 0
@@ -127,9 +142,7 @@ def test_solar_total_has_return_switchtype():
 def test_grid_export_when_exporting():
     # Negative grd means exporting: import power is 0, export power is +abs(grd).
     z = {"gen": 0, "grd": -500, "div": 0, "vol": 2300, "frq": 50.0, "sta": 1, "pst": "A", "zmo": 1}
-    updates, _ = plan(
-        SystemStatus(devices=[], zappi=z), None, PluginState(), {}, CFG, max_step_wh=1e6
-    )
+    updates, _, _ = plan(SystemStatus(devices=[], zappi=z), None, PluginState(), {}, CFG)
     u = _by_unit(updates)
     assert u[UNIT_GRID_IMPORT].svalue.startswith("0;")
     assert u[UNIT_GRID_EXPORT].svalue.startswith("500;")

@@ -40,7 +40,7 @@ def test_real_mid_day_install_renders_non_negative_energy():
     state = PluginState(last_processed_date="2026-07-02", base_wh={}, unit_alloc={}, auto_names={})
     prev = {u: 0.0 for u in AGG_UNITS.values()}
     seeded = advance_baselines(state, [], TODAY_SUMS, prev, AGG_UNITS, 25.0, "2026-07-03")
-    updates, _ = plan(STATUS, TODAY_SUMS, seeded, prev, CFG, max_step_wh=1e9)
+    updates, _, _ = plan(STATUS, TODAY_SUMS, seeded, prev, CFG)
     for u in updates:
         if u.type_name == "kWh":
             energy = float(u.svalue.split(";")[1])

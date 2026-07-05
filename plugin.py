@@ -284,8 +284,6 @@ def onHeartbeat():
         alloc_changed = new_alloc != st.unit_alloc
         st.unit_alloc = new_alloc
         prev = domoticz_api.read_prev_counters(devices, did, list(AGG_UNITS.values()))
-        refresh_seconds = st.config.live_interval * st.config.counter_multiple
-        max_step = st.config.max_system_kw * 1000.0 * (refresh_seconds / 3600.0) * 4.0
         serial = st.config.hub_serial
 
         is_refresh = st.beat == 1 or (st.beat % st.counter_every) == 0
@@ -313,11 +311,15 @@ def onHeartbeat():
             state = advance_baselines(
                 state, backfill, today_raw, prev, AGG_UNITS, st.config.max_system_kw, hub_date
             )
-            updates, state = plan(status, today_raw, state, prev, st.config, max_step)
+            updates, state, holds = plan(status, today_raw, state, prev, st.config)
+            for unit, warn in holds:
+                # A held counter is a data-quality WARN: after the ceiling fix this is
+                # rare (a genuine decrease or corrupt value), so it never spams.
+                Domoticz.Log(f"counter held unit={unit} {warn}")
         else:
             # Live beat (or refresh with no hub date): update power/status only.
             # No load_state (base_wh is unused when today_sums is None).
-            updates, _ = plan(status, None, PluginState(), prev, st.config, max_step)
+            updates, _, _ = plan(status, None, PluginState(), prev, st.config)
             state = None
 
         # Create/update in ascending unit order so a fresh install lays out logically:

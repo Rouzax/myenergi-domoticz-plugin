@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **kWh counters no longer stick at 0 (empty).** On a refresh the counter is set from myenergi's
+  authoritative cumulative total (baseline + today's whole-day sum), but a per-refresh step guard
+  could permanently reject a large but legitimate catch-up, so the counter stayed stuck below the
+  truth forever. This hit any mid-day install (today's energy already exceeds the step) and any
+  recovery after the plugin was offline. The guard is now an absolute lifetime ceiling plus the
+  existing never-decrease rule, so a lagging counter catches up on the next refresh. Existing stuck
+  counters recover automatically; no reinstall needed.
+
+### Changed
+
+- Held or decreased counters are now logged (the clamp warning was previously discarded), so a
+  counter that is held back or corrected is visible in the plugin log instead of failing silently.
+
 ## [1.0.3] - 2026-07-04
 
 ### Fixed
