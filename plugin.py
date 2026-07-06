@@ -324,8 +324,9 @@ def onHeartbeat():
             )
             updates, state, holds = plan(status, today_raw, state, prev, st.config)
             for unit, warn in holds:
-                # A held counter is a data-quality WARN: after the ceiling fix this is
-                # rare (a genuine decrease or corrupt value), so it never spams.
+                # A held counter is a data-quality WARN reserved for a real backslide or
+                # corrupt value: sub-Wh cloud re-aggregation jitter is absorbed by the
+                # clamp deadband and never reaches here, so this stays quiet in steady state.
                 Domoticz.Log(f"counter held beat={st.beat} unit={unit} {warn}")
         else:
             # Live beat (or refresh with no hub date): update power/status only.

@@ -10,6 +10,13 @@ def lifetime_ceiling_wh(max_system_kw: float) -> float:
     return max_system_kw * 1000.0 * 24.0 * 3650.0
 
 
+# myenergi re-reports a completed minute a few hundred J lower on a later fetch, so
+# the re-summed whole-day total dips a fraction of a Wh below the banked counter. Hold
+# such a dip (the counter is monotonic) but do not warn on it: below this threshold it
+# is cloud re-aggregation noise, not a data fault. A real backslide clears the band.
+COUNTER_DEADBAND_WH = 1.0
+
+
 def clamp_counter(prev_wh, candidate_wh, ceiling_wh):
     # The refresh candidate is base + myenergi's authoritative whole-day sum, so it is
     # trusted: guard only against going backwards (monotonic) and against an absurd
@@ -17,9 +24,11 @@ def clamp_counter(prev_wh, candidate_wh, ceiling_wh):
     # catching up after a mid-day install or an offline backfill - must be allowed,
     # otherwise the counter sticks below the truth forever.
     if candidate_wh < prev_wh:
-        return prev_wh, f"decrease held: {candidate_wh:.1f} < {prev_wh:.1f}"
+        if prev_wh - candidate_wh < COUNTER_DEADBAND_WH:
+            return prev_wh, None
+        return prev_wh, f"decrease held: {candidate_wh:.4f} < {prev_wh:.4f}"
     if candidate_wh > ceiling_wh:
-        return prev_wh, f"over ceiling held: {candidate_wh:.1f} > {ceiling_wh:.1f}"
+        return prev_wh, f"over ceiling held: {candidate_wh:.4f} > {ceiling_wh:.4f}"
     return candidate_wh, None
 
 

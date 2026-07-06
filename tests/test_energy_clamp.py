@@ -10,12 +10,30 @@ def test_clamp_accepts_normal_increase():
 
 def test_clamp_holds_on_decrease():
     counter, warn = clamp_counter(prev_wh=1000.0, candidate_wh=990.0, ceiling_wh=CEILING)
-    assert counter == 1000.0 and "decrease" in warn
+    assert counter == 1000.0
+    assert warn is not None and "decrease" in warn
+
+
+def test_clamp_holds_subwh_jitter_silently():
+    # myenergi re-reports a completed minute a few hundred J lower, so the re-summed
+    # day total dips a fraction of a Wh below the banked counter. Hold it (never go
+    # backwards) but do NOT warn: it is cloud re-aggregation noise, not a data fault.
+    counter, warn = clamp_counter(prev_wh=45071.44, candidate_wh=45071.38, ceiling_wh=CEILING)
+    assert counter == 45071.44 and warn is None
+
+
+def test_clamp_warns_on_decrease_at_or_above_deadband():
+    # A drop of a full Wh or more is a real anomaly worth a line; the message carries
+    # enough precision to be legible (not "X < X" after rounding).
+    counter, warn = clamp_counter(prev_wh=1000.0, candidate_wh=998.5, ceiling_wh=CEILING)
+    assert counter == 1000.0
+    assert warn is not None and "998.5000" in warn and "1000.0000" in warn
 
 
 def test_clamp_holds_over_absolute_ceiling():
     counter, warn = clamp_counter(prev_wh=1000.0, candidate_wh=1e12, ceiling_wh=CEILING)
-    assert counter == 1000.0 and "ceiling" in warn
+    assert counter == 1000.0
+    assert warn is not None and "ceiling" in warn
 
 
 def test_clamp_allows_large_catchup_under_ceiling():
