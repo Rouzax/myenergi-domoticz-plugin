@@ -62,10 +62,11 @@ readings around export-only moments are expected there too, not just in this plu
   there. This is a one-time thing at install: it is not something that runs every time the
   plugin restarts. See [Starting from zero on a new
   install](internals.md#starting-from-zero-on-a-new-install).
-- Counters never count backwards, and never jump up by an unrealistic amount in a single refresh
-  (how big a jump counts as unrealistic is controlled by the **Max System Power (kW)** setting).
-  An unrealistic jump is held back and retried on the next refresh rather than applied, so a
-  brief "stuck" value after an unusual event is expected, not a bug.
+- Counters never count backwards, and are capped by an absolute ceiling (derived from the **Max
+  System Power (kW)** setting) that rejects only a genuinely corrupt reading. A legitimate large
+  increase, such as a mid-day install or catching up after downtime, is allowed through so the
+  counter reaches the correct total. If a reading is rejected the counter keeps its previous value
+  and retries on the next refresh; this is rare and is written to the plugin log.
 - If Domoticz was offline for a while after already running successfully, the plugin catches up
   automatically on the next counter refresh, backfilling up to **14 days** of missed history.
   This is a catch-up mechanism only, not something that looks back through your myenergi history

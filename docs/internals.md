@@ -56,16 +56,19 @@ If you restart the plugin on an install that has already been running for a whil
 device), the same calculation lets the counter carry on smoothly from where it left off, instead
 of jumping or resetting.
 
-### Counters only ever go up, within reason
+### Counters only ever go up
 
-Every time a counter is about to be updated, the plugin checks two things:
+Each counter value comes from myenergi's own authoritative daily figure (the counter's running
+baseline plus today's whole-day total), so the plugin trusts it and applies two sanity checks:
 
 - the new value is never lower than before (a counter should never count backwards), and
-- the jump since the last update is never bigger than what your system could plausibly produce,
-  based on the **Max System Power (kW)** setting.
+- the new value is never above an absolute ceiling far larger than any real total, derived from the
+  **Max System Power (kW)** setting, which rejects only a genuinely corrupt reading.
 
-If an update fails either check, the plugin skips it for that cycle and simply tries again on the
-next refresh, rather than writing a bad number and putting a spike in your chart.
+A large but legitimate increase is allowed through, so a counter that is behind, such as after a
+mid-day install or after catching up from downtime (see below), reaches the correct total instead
+of being held back. If a check does reject a value, the counter keeps its previous value and tries
+again on the next refresh; that is rare and, when it happens, it is written to the plugin log.
 
 ### Catching up after downtime (backfill)
 
@@ -100,4 +103,4 @@ independent samples, not a plugin error, and it evens out over time.
 
 - [Monitoring devices](devices.md) for what each device shows.
 - [Settings](settings.md) for the poll and counter-refresh intervals, and the system power limit
-  used to catch unrealistic counter jumps.
+  used as a ceiling on counter values.

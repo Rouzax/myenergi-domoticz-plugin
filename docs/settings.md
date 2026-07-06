@@ -34,7 +34,7 @@ below.
 
 | Setting | Range / options | Default | What it does |
 |---|---|---|---|
-| Max System Power (kW) | 1-100, step 1 | 25 | A safety limit for the energy counters, roughly your combined solar, grid, and charger capacity in kW. The plugin uses it to spot and reject an unrealistic jump in a counter; it does not limit the live power readings themselves. |
+| Max System Power (kW) | 1-100, step 1 | 25 | A safety limit for the energy counters, roughly your combined solar, grid, and charger capacity in kW. The plugin uses it as an absolute ceiling to reject a genuinely corrupt counter reading; it does not cap normal catch-up or the live power readings themselves. |
 | Debug Level | None / Basic / Verbose | None | Logging verbosity written to the Domoticz log. Use Basic or Verbose only while troubleshooting; the API key is never written to the log at any level. |
 
 ## Harvi Names (optional)
