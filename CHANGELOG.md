@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-07-06
+
+### Fixed
+
+- **"counter held ... decrease held" no longer spams the log.** myenergi re-reports a completed
+  minute of its daily energy history a few hundred joules lower on a later fetch, so the re-summed
+  whole-day total dips a fraction of a Wh below the counter already banked. The never-decrease guard
+  correctly held the value but logged a data-quality warning on every refresh, and rounded the
+  message to one decimal so it read as an impossible "X < X". A sub-Wh backward move is now absorbed
+  silently (the counter stays monotonic, exactly as before); only a real decrease of 1 Wh or more,
+  or a value over the lifetime ceiling, is logged, now with full precision. Confirmed against a live
+  charging session: actively-moving counters never trip the warning.
+
 ## [1.0.4] - 2026-07-05
 
 ### Fixed
