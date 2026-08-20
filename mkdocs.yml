@@ -49,6 +49,18 @@ theme:
 exclude_docs: |
   superpowers/
 
+# Renders a small icon row in the footer of every page. Icon names resolve against
+# the sets mkdocs-material bundles under templates/.icons (the pinned 9.6.23 has no
+# fontawesome/brands/ko-fi, so the Simple Icons glyph is used).
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Rouzax/myenergi-domoticz-plugin
+      name: myenergi Monitor on GitHub
+    - icon: simple/kofi
+      link: https://ko-fi.com/O0W221GBUG
+      name: Support myenergi Monitor on Ko-fi
+
 extra_css:
   - stylesheets/extra.css
 

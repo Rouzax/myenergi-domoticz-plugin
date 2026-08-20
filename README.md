@@ -7,6 +7,7 @@ Real solar, EV, home, grid, and per-inverter energy from your myenergi system - 
 [![Domoticz](https://img.shields.io/badge/Domoticz-plugin-1a6fc9?style=for-the-badge)](https://www.domoticz.com/)
 [![Python](https://img.shields.io/badge/python-3.9%2B-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4caf50?style=for-the-badge)](LICENSE)
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/O0W221GBUG)
 
 > **Full documentation, install guide, settings, and FAQ:**
 > **[rouzax.github.io/myenergi-domoticz-plugin](https://rouzax.github.io/myenergi-domoticz-plugin/)**
@@ -66,6 +67,14 @@ the [Security page](https://rouzax.github.io/myenergi-domoticz-plugin/security/)
 
 Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup
 (tests, linting, type checks).
+
+## Support
+
+Building tools that solve my own problems and sharing them in the hope they solve yours too. If
+this saved you from squinting at the myenergi app to work out where your solar actually went, a
+coffee is always welcome.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O0W221GBUG)
 
 ## License and acknowledgements
 
