@@ -8,6 +8,15 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **The documentation site now uses Zensical's recommended extension and feature set.** Declaring
+  `markdown_extensions` at all suppresses those defaults, so the carried-over Material list had been
+  silently disabling most of them. Pages gain an "edit this page" link to GitHub, code line selection and
+  annotations, rich tooltips, linked `#123` issue references, and click-to-zoom on the three screenshots.
+  Rendered page text is unchanged: all nine pages were compared character for character against the
+  previous build with tags and whitespace stripped, and none differ. Breadcrumbs and section index pages
+  are deliberately left off, having been verified to render nothing against this site's flat navigation.
+  Nothing about running the plugin changes.
+
 - **The documentation site is now built with [Zensical](https://zensical.org/)** instead of MkDocs with
   Material for MkDocs. Material entered maintenance mode in November 2025 and MkDocs 2.0 is a rewrite
   that drops the plugin system, moves config to TOML with no migration path, and currently ships
