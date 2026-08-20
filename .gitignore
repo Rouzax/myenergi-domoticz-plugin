@@ -6,6 +6,7 @@ __pycache__/
 htmlcov/
 .claude/
 docs/superpowers/
+site/
 .superpowers/
 _temp/
 CLAUDE.md

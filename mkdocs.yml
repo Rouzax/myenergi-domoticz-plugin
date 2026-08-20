@@ -8,6 +8,16 @@ repo_url: https://github.com/Rouzax/myenergi-domoticz-plugin
 repo_name: Rouzax/myenergi-domoticz-plugin
 copyright: Copyright &copy; 2026 Rouzax - not affiliated with myenergi
 
+# Built with Zensical, which reads this mkdocs.yml natively. Material for
+# MkDocs went into maintenance mode in November 2025; Zensical is the same
+# team's successor. Keeping the config in mkdocs.yml rather than the native
+# zensical.toml is deliberate: it is what the Zensical project itself does,
+# and it keeps the build tool swappable.
+#
+# Zensical has no `-d` / `--site-dir` flag, so this key is the only thing that
+# decides where the build lands, and docs.yml publishes exactly this path.
+site_dir: site
+
 theme:
   name: material
   icon:
@@ -44,14 +54,15 @@ theme:
     - search.highlight
     - content.code.copy
 
-# Never publish the local-only planning docs (gitignored; also kept out of any
-# local `mkdocs gh-deploy` build where they exist on disk).
+# Never publish the local-only planning docs. Only honoured by MkDocs;
+# Zensical ignores exclude_docs, so .gitignore is the real guard, which keeps
+# docs/superpowers/ out of the repo and therefore out of CI.
 exclude_docs: |
   superpowers/
 
 # Renders a small icon row in the footer of every page. Icon names resolve against
-# the sets mkdocs-material bundles under templates/.icons (the pinned 9.6.23 has no
-# fontawesome/brands/ko-fi, so the Simple Icons glyph is used).
+# the sets Zensical bundles under templates/.icons; an unknown name fails the
+# build rather than rendering nothing.
 extra:
   social:
     - icon: fontawesome/brands/github
@@ -78,8 +89,8 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:zensical.extensions.emoji.twemoji
+      emoji_generator: !!python/name:zensical.extensions.emoji.to_svg
 
 nav:
   - Home: index.md

@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- **The documentation site is now built with [Zensical](https://zensical.org/)** instead of MkDocs with
+  Material for MkDocs. Material entered maintenance mode in November 2025 and MkDocs 2.0 is a rewrite
+  that drops the plugin system, moves config to TOML with no migration path, and currently ships
+  without a license; Zensical is the same team's successor, is MIT licensed, and reads the existing
+  `mkdocs.yml` natively, so the configuration stays where it is. Rendered page content is unchanged:
+  all nine pages were built with both toolchains and compared character for character with tags and
+  whitespace stripped, and none differ. `mkdocs gh-deploy` has no Zensical equivalent, so the workflow
+  now builds and publishes to `gh-pages` explicitly, still as a single orphan commit. The build tool is
+  pinned in `requirements-docs.txt` so Dependabot tracks it. Nothing about running the plugin changes.
+
 ### Added
 
 - **A Ko-fi support link**, on the GitHub repository page, in the README, and in the footer of every

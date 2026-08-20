@@ -42,10 +42,10 @@ Conventions:
 
 ## Docs
 
-The manual is [MkDocs](https://www.mkdocs.org/) + Material under `docs/`.
+The manual is built with [Zensical](https://zensical.org/) from `docs/`. It reads `mkdocs.yml` natively, so the config stays in that file.
 
 ```bash
-pip install mkdocs-material==9.6.23
-mkdocs serve            # live preview at http://127.0.0.1:8000
-mkdocs build --strict   # must pass
+pip install -r requirements-docs.txt
+zensical serve                  # live preview at http://127.0.0.1:8000
+zensical build --clean --strict # must pass
 ```
