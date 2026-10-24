@@ -64,35 +64,80 @@
 </plugin>
 """
 
+import sys
 import time
 import urllib.error
 from dataclasses import dataclass, field, replace
+from typing import TYPE_CHECKING
 
 import DomoticzEx as Domoticz
 
-import control
-import domoticz_api
-from config import parse_config
-from energy import missing_dates
-from model import parse_jday, parse_jstatus
-from myenergi_client import MyEnergiClient
-from persistence import PluginState
-from planner import AGG_UNITS, advance_baselines, assign_harvi_units, plan, plan_harvi_updates
+if TYPE_CHECKING:
+    import control
+    import domoticz_api
+    from config import parse_config
+    from energy import missing_dates
+    from model import parse_jday, parse_jstatus
+    from myenergi_client import MyEnergiClient
+    from persistence import PluginState
+    from planner import (
+        AGG_UNITS,
+        advance_baselines,
+        assign_harvi_units,
+        plan,
+        plan_harvi_updates,
+    )
 
+MIN_PYTHON = (3, 11)
 _MAX_BACKFILL_DAYS = 14
 _DISCOVERY_BACKOFF_INITIAL = 20.0
 _DISCOVERY_BACKOFF_CAP = 900.0
 
 # Units plan_control_updates can emit; hidden (Used=0) when control is disabled,
 # re-shown (Used=1) when it is re-enabled. Unit 17 was removed and is not a member.
-CONTROL_UNITS = (
-    control.UNIT_MODE,
-    control.UNIT_BOOST,
-    control.UNIT_BOOST_KWH,
-    control.UNIT_BOOST_TIME,
-    control.UNIT_MIN_GREEN,
-    control.UNIT_LOCK_STATE,
-)
+# Filled by _load_modules, since the unit numbers live in the control module.
+CONTROL_UNITS: tuple = ()
+_modules_loaded = False
+
+
+def _python_ok(version=sys.version_info) -> bool:
+    return tuple(version[:2]) >= MIN_PYTHON
+
+
+def _load_modules() -> None:
+    """Project modules may use 3.11 syntax and APIs, so they are imported only after the version
+    check; a top-level import would fail before onStart could explain why. Domoticz calls
+    onStart again in the same interpreter after a settings change, so this binds them once."""
+    global control, domoticz_api, parse_config, missing_dates, parse_jday, parse_jstatus
+    global MyEnergiClient, PluginState, AGG_UNITS, advance_baselines, assign_harvi_units
+    global plan, plan_harvi_updates, CONTROL_UNITS, _modules_loaded
+    if _modules_loaded:
+        return
+    import control
+    import domoticz_api
+    from config import parse_config
+    from energy import missing_dates
+    from model import parse_jday, parse_jstatus
+    from myenergi_client import MyEnergiClient
+    from persistence import PluginState
+    from planner import (
+        AGG_UNITS,
+        advance_baselines,
+        assign_harvi_units,
+        plan,
+        plan_harvi_updates,
+    )
+
+    CONTROL_UNITS = (
+        control.UNIT_MODE,
+        control.UNIT_BOOST,
+        control.UNIT_BOOST_KWH,
+        control.UNIT_BOOST_TIME,
+        control.UNIT_MIN_GREEN,
+        control.UNIT_LOCK_STATE,
+    )
+    _modules_loaded = True
+
 
 UNIT_MODE_TEXT = 7  # Zappi Mode read-only text; hidden once while control is enabled.
 
@@ -151,6 +196,13 @@ _state = _PluginState()
 def onStart():
     global _state
     _state = _PluginState()
+    if not _python_ok():
+        Domoticz.Error(
+            "myenergi Monitor needs Python 3.11 or newer; "
+            f"this Domoticz runs {sys.version.split()[0]}"
+        )
+        return
+    _load_modules()
     cfg = parse_config(Parameters)  # noqa: F821 - Parameters injected by Domoticz
     _state.config = cfg
     _apply_debug_level(cfg.debug_level)

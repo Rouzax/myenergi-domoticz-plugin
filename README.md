@@ -5,7 +5,7 @@ Real solar, EV, home, grid, and per-inverter energy from your myenergi system - 
 [![Docs](https://img.shields.io/badge/docs-online-2e7d32?style=for-the-badge&logo=materialformkdocs&logoColor=white)](https://rouzax.github.io/myenergi-domoticz-plugin/)
 [![Release](https://img.shields.io/github/v/release/Rouzax/myenergi-domoticz-plugin?style=for-the-badge&color=orange)](https://github.com/Rouzax/myenergi-domoticz-plugin/releases)
 [![Domoticz](https://img.shields.io/badge/Domoticz-plugin-1a6fc9?style=for-the-badge)](https://www.domoticz.com/)
-[![Python](https://img.shields.io/badge/python-3.9%2B-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4caf50?style=for-the-badge)](LICENSE)
 [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/O0W221GBUG)
 
@@ -41,6 +41,8 @@ With **Allow Control** enabled, the charger control devices appear as interactiv
 - A myenergi hub with at least one zappi, its hub serial, and an API key (myenergi app ->
   Account -> Advanced -> API key).
 - Internet access from the Domoticz host (the myenergi local API is not supported).
+- Domoticz running Python 3.11 or newer. Debian 11 and Raspberry Pi OS bullseye ship Python 3.9;
+  stay on v1.0.5 there.
 
 ## Install (short)
 

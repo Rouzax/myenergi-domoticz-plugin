@@ -1,13 +1,13 @@
 [project]
 name = "myenergi-domoticz-plugin"
-version = "1.0.0"
+version = "1.1.0"
 description = "myenergi (zappi/harvi) monitoring plugin for Domoticz"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 
 [tool.ruff]
-# UP (pyupgrade) intentionally omitted: the 3.9 floor forbids proposing
-# X | Y unions / builtins-as-generics that break at runtime on that floor.
-target-version = "py39"
+# UP (pyupgrade) is not selected: turning it on rewrites annotations across the
+# whole repo, which belongs in its own change.
+target-version = "py311"
 line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "SIM"]
@@ -25,7 +25,7 @@ exclude = ["tests", "docs", "_temp"]
 # `import sanitize`). extraPaths puts the repo root on the import search path so
 # pyright resolves those imports in both source and (editor-analysed) tests.
 extraPaths = ["."]
-pythonVersion = "3.9"
+pythonVersion = "3.11"
 typeCheckingMode = "basic"
 
 [tool.coverage.run]

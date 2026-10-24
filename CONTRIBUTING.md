@@ -12,7 +12,7 @@ welcome.
 
 ## Development setup
 
-The runtime is **stdlib-only** and targets **Python 3.9**. Dev tooling is pinned in
+The runtime is **stdlib-only** and targets **Python 3.11**. Dev tooling is pinned in
 `requirements-dev.txt`.
 
 ```bash
@@ -35,7 +35,7 @@ python3 -m pytest         # tests (add tests for any behaviour change)
 
 Conventions:
 
-- Python 3.9 floor; no third-party packages at runtime (stdlib only).
+- Python 3.11 floor; no third-party packages at runtime (stdlib only).
 - Keep repo-root `*.py` runtime-only - dev-only scripts live under `tools/` or `tests/`.
 - No em-dash characters in code, comments, or docs.
 - Never commit secrets or real serials; fixtures use placeholder values.

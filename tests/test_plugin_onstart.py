@@ -190,3 +190,28 @@ def test_onstart_fetch_status_failure_does_not_raise(monkeypatch):
     plugin.Parameters = _params("true")
     plugin.onStart()  # must not raise
     assert any("onStart control reconcile failed" in m for m in Domoticz._log)
+
+
+def test_python_ok_requires_3_11():
+    assert plugin._python_ok((3, 11, 0))
+    assert plugin._python_ok((3, 13, 5))
+    assert not plugin._python_ok((3, 10, 9))
+    assert not plugin._python_ok((3, 9, 25))
+
+
+def test_onstart_on_old_python_logs_and_stays_idle(monkeypatch):
+    """Below the floor onStart explains why and starts nothing; later callbacks are no-ops."""
+    monkeypatch.setattr(plugin, "_python_ok", lambda: False)
+
+    def _no_load():
+        raise AssertionError("project modules must not be imported on an old Python")
+
+    monkeypatch.setattr(plugin, "_load_modules", _no_load)
+    plugin.Parameters = {"Username": "20000002", "ApiKey": "k"}
+    plugin.onStart()
+    assert any("needs Python 3.11 or newer" in line for line in Domoticz._log)
+    assert Domoticz._heartbeat is None
+    assert plugin._state.client is None
+    plugin.onHeartbeat()
+    plugin.onCommand("x", 12, "Set Level", 10, None)
+    plugin.onStop()

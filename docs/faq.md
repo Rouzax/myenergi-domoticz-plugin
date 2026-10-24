@@ -3,6 +3,23 @@
 Entries are grouped by what you actually see happening in Domoticz, not by which part of the
 plugin caused it.
 
+## The log says "needs Python 3.11 or newer"
+
+The full line is `myenergi Monitor needs Python 3.11 or newer; this Domoticz runs 3.9.x` (or
+3.10.x). Since v1.1.0 the plugin requires Python 3.11, and Domoticz runs plugins on the Python
+installed on its host. The plugin stops at startup: no devices are created or updated, and
+existing devices and kWh counters keep their values. Debian 11 and Raspberry Pi OS bullseye ship
+Python 3.9. Either:
+
+- go back to plugin **v1.0.5**, which runs on Python 3.9: download `myenergi-v1.0.5.zip` from
+  the [v1.0.5 release](https://github.com/Rouzax/myenergi-domoticz-plugin/releases/tag/v1.0.5),
+  replace the plugin folder with it, and restart Domoticz, or
+- upgrade the host to Debian 12 or Raspberry Pi OS bookworm (Python 3.11) and restart Domoticz.
+
+Either way nothing needs to be reconfigured. The kWh counters catch up on the time the plugin was
+stopped, up to 14 days, the same as after any Domoticz downtime (see
+[below](#a-kwh-counter-looks-wrong-after-a-restart-or-after-installing-the-plugin)).
+
 ## No devices appear at all
 
 1. Check **Setup > Settings** (or the Hardware page, depending on your Domoticz version) and
@@ -20,6 +37,8 @@ See also [Installation](install.md) for the full setup sequence.
 
 ## Devices stopped updating after working fine
 
+- If this started right after updating the plugin, look for "needs Python 3.11 or newer" in the
+  log; see [above](#the-log-says-needs-python-311-or-newer).
 - Check the log at Basic or Verbose debug level for repeated connection failures. The plugin
   waits longer between each retry (starting at 20 seconds and doubling up to a maximum of 15
   minutes) rather than hammering myenergi's cloud with requests, so a short outage can take a few

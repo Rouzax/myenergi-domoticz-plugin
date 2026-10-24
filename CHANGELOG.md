@@ -8,6 +8,15 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **Breaking: the plugin now needs Python 3.11 or newer.** Python 3.9 has been out of security
+  support since October 2025 and 3.10 reaches end of life in October 2026. Domoticz uses the
+  Python installed on its host, so this affects Debian 11 and Raspberry Pi OS bullseye systems,
+  which ship Python 3.9. On those the plugin no longer starts: it logs `myenergi Monitor needs
+  Python 3.11 or newer; this Domoticz runs 3.9.x` and leaves devices and counters as they are.
+  Stay on v1.0.5 there, or upgrade to Debian 12 / Raspberry Pi OS bookworm; nothing needs to be
+  reconfigured, and the kWh counters catch up on the stopped time (up to 14 days). Your Python
+  version is in the Domoticz log at startup (`PluginSystem: Started, Python version ...`).
+
 - **The documentation site now uses Zensical's recommended extension and feature set.** Declaring
   `markdown_extensions` at all suppresses those defaults, so the carried-over Material list had been
   silently disabling most of them. Pages gain an "edit this page" link to GitHub, code line selection and

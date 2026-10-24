@@ -11,6 +11,10 @@ Before you start, make sure you have:
 - A **myenergi API key**, generated in the myenergi app under **Account > Advanced > API key**.
 - **Internet access from the Domoticz host.** The plugin talks to the myenergi cloud
   (`director.myenergi.net`); the myenergi local API is not supported and cannot be used instead.
+- **Domoticz running Python 3.11 or newer.** Domoticz uses the Python installed on its host;
+  the version is in the Domoticz log at startup, on the line
+  `PluginSystem: Started, Python version '3.x.y'`. Debian 11 and Raspberry Pi OS bullseye ship
+  Python 3.9: there, stay on plugin v1.0.5 or upgrade the operating system.
 
 !!! warning "The API key grants full control"
     The API key you generate lets its holder change your zappi's charge mode, start or stop

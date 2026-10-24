@@ -104,6 +104,6 @@ def test_multiple_harvis_classify_independently():
         {"sno": "19000001", "ectt1": "Generation", "ectp1": 100},
         {"sno": "22000001", "ectt1": "AC Battery", "ectp1": -50},
     )
-    kinds = {h.serial: u.type_name for h, u in zip(harvis, ups)}
+    kinds = {h.serial: u.type_name for h, u in zip(harvis, ups, strict=True)}
     assert kinds["19000001"] == "Usage"  # generation tile
     assert kinds["22000001"] == "Custom"  # battery -> signed tile

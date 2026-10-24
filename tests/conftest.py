@@ -12,12 +12,17 @@ from tests import domoticz_stub
 # Without this, collection fails with ModuleNotFoundError before any fixture runs.
 domoticz_stub.install()
 
+# onStart imports the project modules only after its Python version check; tests drive
+# onHeartbeat/onCommand directly, so the modules are loaded once here.
+import plugin  # noqa: E402
+
+plugin._load_modules()
+
 
 @pytest.fixture(autouse=True)
 def domoticz():
     """Reset the fake Domoticz + Devices (and plugin state) before every test."""
     mod = domoticz_stub.install()
-    if "plugin" in sys.modules:
-        sys.modules["plugin"]._state = sys.modules["plugin"]._PluginState()
-        sys.modules["plugin"].Devices = mod.Devices
+    plugin._state = plugin._PluginState()
+    plugin.Devices = mod.Devices
     return mod
