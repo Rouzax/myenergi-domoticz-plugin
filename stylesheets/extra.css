@@ -1,0 +1,26 @@
+/* WCAG 2.1 AA color overrides for the energy-green theme.
+ * All interactive/text-on-background pairs meet the 4.5:1 normal-text ratio.
+ * Ratios (computed): light header white-on-#2e7d32 = 5.13:1; light links
+ * #1b5e20-on-white = 7.87:1; dark links #81c784-on-slate = 8.00:1. */
+
+/* Light scheme */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #2e7d32;        /* header bg; white text 5.13:1 */
+  --md-primary-fg-color--light: #4c9850;
+  --md-primary-fg-color--dark: #1b5e20;
+  --md-primary-bg-color: #ffffff;        /* header foreground text */
+  --md-primary-bg-color--light: hsla(0, 0%, 100%, 0.7);
+  --md-accent-fg-color: #1b5e20;         /* interactive/hover; 7.87:1 on white */
+  --md-typeset-a-color: #1b5e20;         /* body links; 7.87:1 on white */
+}
+
+/* Dark (slate) scheme */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #2e7d32;        /* header bg; white text 5.13:1 */
+  --md-primary-fg-color--light: #4c9850;
+  --md-primary-fg-color--dark: #1b5e20;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: hsla(0, 0%, 100%, 0.7);
+  --md-accent-fg-color: #81c784;         /* interactive/hover; 8.00:1 on slate */
+  --md-typeset-a-color: #81c784;         /* body links; 8.00:1 on slate */
+}

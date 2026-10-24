@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/install/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/settings/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/devices/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/control/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/internals/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/security/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/faq/</loc>
+      </url>
+      <url>
+        <loc>https://rouzax.github.io/myenergi-domoticz-plugin/about/</loc>
+      </url>
+</urlset>
