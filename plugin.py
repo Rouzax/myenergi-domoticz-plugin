@@ -1,6 +1,6 @@
 # pyright: reportMissingImports=false, reportUndefinedVariable=false, reportAttributeAccessIssue=false
 """\
-<plugin key="myenergi" name="myenergi Monitor" author="Rouzax" version="1.0.5" externallink="https://github.com/Rouzax/myenergi-domoticz-plugin">
+<plugin key="myenergi" name="myenergi Monitor" author="Rouzax" version="1.1.0" externallink="https://github.com/Rouzax/myenergi-domoticz-plugin">
     <description>
         <h2>myenergi cloud monitor (read-only)</h2>
         <p>Reads your myenergi system (zappi, harvi) via the cloud API and creates Solar Total, Home Consumption, EV Charging (real kWh counters), plus mode/status/voltage/frequency devices.</p>
@@ -47,6 +47,15 @@
                     <option label="Verbose" value="2"/>
                 </options>
             </param>
+            <param field="UpdateCheck" label="Update check" width="220px">
+                <description>Once a day the plugin asks GitHub whether a newer version exists, and announces it once through the Domoticz notification systems and in the log. Automatic reports betas while you run a beta and only stable releases while you run a stable one. It sends nothing about you or your myenergi system; Off stops the check.</description>
+                <options>
+                    <option label="Automatic" value="auto" default="true"/>
+                    <option label="Stable releases only" value="stable"/>
+                    <option label="Including betas" value="beta"/>
+                    <option label="Off" value="off"/>
+                </options>
+            </param>
         </group>
         <group label="Harvi Names (optional)">
             <param field="Harvi1Serial" label="Harvi 1 serial" width="120px">
@@ -64,35 +73,86 @@
 </plugin>
 """
 
+import queue
+import sys
 import time
 import urllib.error
 from dataclasses import dataclass, field, replace
+from typing import TYPE_CHECKING
 
 import DomoticzEx as Domoticz
 
-import control
-import domoticz_api
-from config import parse_config
-from energy import missing_dates
-from model import parse_jday, parse_jstatus
-from myenergi_client import MyEnergiClient
-from persistence import PluginState
-from planner import AGG_UNITS, advance_baselines, assign_harvi_units, plan, plan_harvi_updates
+if TYPE_CHECKING:
+    import control
+    import domoticz_api
+    import translations
+    import update_check
+    from config import parse_config
+    from energy import missing_dates
+    from model import parse_jday, parse_jstatus
+    from myenergi_client import MyEnergiClient
+    from persistence import PluginState
+    from planner import (
+        AGG_UNITS,
+        advance_baselines,
+        assign_harvi_units,
+        plan,
+        plan_harvi_updates,
+    )
 
+MIN_PYTHON = (3, 11)
+REPOSITORY = "Rouzax/myenergi-domoticz-plugin"
 _MAX_BACKFILL_DAYS = 14
 _DISCOVERY_BACKOFF_INITIAL = 20.0
 _DISCOVERY_BACKOFF_CAP = 900.0
 
 # Units plan_control_updates can emit; hidden (Used=0) when control is disabled,
 # re-shown (Used=1) when it is re-enabled. Unit 17 was removed and is not a member.
-CONTROL_UNITS = (
-    control.UNIT_MODE,
-    control.UNIT_BOOST,
-    control.UNIT_BOOST_KWH,
-    control.UNIT_BOOST_TIME,
-    control.UNIT_MIN_GREEN,
-    control.UNIT_LOCK_STATE,
-)
+# Filled by _load_modules, since the unit numbers live in the control module.
+CONTROL_UNITS: tuple = ()
+_modules_loaded = False
+
+
+def _python_ok(version=sys.version_info) -> bool:
+    return tuple(version[:2]) >= MIN_PYTHON
+
+
+def _load_modules() -> None:
+    """Project modules may use 3.11 syntax and APIs, so they are imported only after the version
+    check; a top-level import would fail before onStart could explain why. Domoticz calls
+    onStart again in the same interpreter after a settings change, so this binds them once."""
+    global control, domoticz_api, parse_config, missing_dates, parse_jday, parse_jstatus
+    global MyEnergiClient, PluginState, AGG_UNITS, advance_baselines, assign_harvi_units
+    global plan, plan_harvi_updates, translations, update_check, CONTROL_UNITS, _modules_loaded
+    if _modules_loaded:
+        return
+    import control
+    import domoticz_api
+    import translations
+    import update_check
+    from config import parse_config
+    from energy import missing_dates
+    from model import parse_jday, parse_jstatus
+    from myenergi_client import MyEnergiClient
+    from persistence import PluginState
+    from planner import (
+        AGG_UNITS,
+        advance_baselines,
+        assign_harvi_units,
+        plan,
+        plan_harvi_updates,
+    )
+
+    CONTROL_UNITS = (
+        control.UNIT_MODE,
+        control.UNIT_BOOST,
+        control.UNIT_BOOST_KWH,
+        control.UNIT_BOOST_TIME,
+        control.UNIT_MIN_GREEN,
+        control.UNIT_LOCK_STATE,
+    )
+    _modules_loaded = True
+
 
 UNIT_MODE_TEXT = 7  # Zappi Mode read-only text; hidden once while control is enabled.
 
@@ -143,6 +203,9 @@ class _PluginState:
     mode_text_hidden: bool = False
     control_shown: bool = False
     reconcile_suppress: dict = field(default_factory=dict)
+    # Update check: its thread posts results here; drained on the heartbeat (update_check.py).
+    checker: object = None
+    updates: queue.Queue = field(default_factory=queue.Queue)
 
 
 _state = _PluginState()
@@ -150,10 +213,19 @@ _state = _PluginState()
 
 def onStart():
     global _state
+    _stop_update_check(_state)
     _state = _PluginState()
+    if not _python_ok():
+        Domoticz.Error(
+            "myenergi Monitor needs Python 3.11 or newer; "
+            f"this Domoticz runs {sys.version.split()[0]}"
+        )
+        return
+    _load_modules()
     cfg = parse_config(Parameters)  # noqa: F821 - Parameters injected by Domoticz
     _state.config = cfg
     _apply_debug_level(cfg.debug_level)
+    _start_update_check(_state)
     _state.counter_every = cfg.counter_multiple
     Domoticz.Heartbeat(cfg.live_interval)
     Domoticz.Debug(
@@ -187,6 +259,65 @@ def onStart():
 
 def onStop():
     _state.client = None
+    _stop_update_check(_state)
+
+
+def _new_update_checker(current, channel, results):
+    return update_check.UpdateChecker(
+        REPOSITORY, current, channel, results, user_agent=f"myenergi/{current} update-check"
+    )
+
+
+def _start_update_check(st) -> None:
+    cfg = st.config
+    # Domoticz passes the manifest version; without it there is nothing to compare against.
+    if cfg.update_check == "off" or not cfg.plugin_version:
+        return
+    try:
+        st.checker = _new_update_checker(cfg.plugin_version, cfg.update_check, st.updates)
+        st.checker.start()
+    except Exception as exc:  # noqa: BLE001 - the update check must never block the plugin
+        st.checker = None
+        Domoticz.Debug(f"update check not started: {type(exc).__name__}")
+
+
+def _stop_update_check(st) -> None:
+    # A daemon thread: stop() ends it at its next wake-up, and nothing waits for it, so a check
+    # blocked on the network never holds up a restart or a Domoticz shutdown.
+    if st.checker is not None:
+        st.checker.stop()
+        st.checker = None
+
+
+def _announce_updates(st) -> None:
+    """Announce each newer version once: a log line and one notification through every
+    notification system Domoticz has (an empty subsystem), the browser included."""
+    cfg = st.config
+    while True:
+        try:
+            result = st.updates.get_nowait()
+        except queue.Empty:
+            return
+        if result.error:
+            Domoticz.Debug(f"update check failed: {result.error}")
+            continue
+        saved = domoticz_api.load_state()
+        if result.version is None or result.version == saved.update_notified:
+            continue
+        current = cfg.plugin_version
+        Domoticz.Status(
+            f"myenergi Monitor {result.version} is available (running {current}): {result.url}"
+        )
+        # Domoticz before 2026.1 has no SendNotification for plugins: the log line is then all.
+        send = getattr(Domoticz, "SendNotification", None)
+        if send is not None:
+            subject = translations.update_note("subject", cfg.language, version=result.version)
+            body = translations.update_note("body", cfg.language, current=current, url=result.url)
+            try:
+                send(subject, body, 0, "", "", "")
+            except Exception as exc:  # noqa: BLE001
+                Domoticz.Debug(f"update notification failed: {type(exc).__name__}")
+        domoticz_api.save_state(replace(saved, update_notified=result.version))
 
 
 def _note_transient_discovery_failure(st, now, exc) -> None:
@@ -245,6 +376,13 @@ def _persist_state(st):
 
 def onHeartbeat():
     st = _state
+    # Ahead of the guards below, so a failing myenergi connection does not hold back an
+    # announcement.
+    if st.config is not None:
+        try:
+            _announce_updates(st)
+        except Exception as exc:  # noqa: BLE001 - heartbeat must never raise into the framework
+            Domoticz.Debug(f"update announcement failed: {type(exc).__name__}")
     if st.client is None or st.config is None:
         return
     devices = globals().get("Devices")

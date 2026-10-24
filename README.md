@@ -5,8 +5,9 @@ Real solar, EV, home, grid, and per-inverter energy from your myenergi system - 
 [![Docs](https://img.shields.io/badge/docs-online-2e7d32?style=for-the-badge&logo=materialformkdocs&logoColor=white)](https://rouzax.github.io/myenergi-domoticz-plugin/)
 [![Release](https://img.shields.io/github/v/release/Rouzax/myenergi-domoticz-plugin?style=for-the-badge&color=orange)](https://github.com/Rouzax/myenergi-domoticz-plugin/releases)
 [![Domoticz](https://img.shields.io/badge/Domoticz-plugin-1a6fc9?style=for-the-badge)](https://www.domoticz.com/)
-[![Python](https://img.shields.io/badge/python-3.9%2B-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4caf50?style=for-the-badge)](LICENSE)
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/O0W221GBUG)
 
 > **Full documentation, install guide, settings, and FAQ:**
 > **[rouzax.github.io/myenergi-domoticz-plugin](https://rouzax.github.io/myenergi-domoticz-plugin/)**
@@ -30,6 +31,7 @@ power as real kWh counters that survive Domoticz restarts, plus **opt-in** charg
 | **Persistent counters** | Rebuilt from myenergi's per-minute history; monotonic and restart-proof. |
 | **Opt-in charger control** | Charge mode, boost (kWh + ready-by), and Eco+ min-green - off by default. |
 | **English + Nederlands** | Device names and status text in either language. |
+| **New-version notice** | A daily GitHub check announces each newer release once, in the log and through Domoticz notifications; can be turned off. |
 
 With **Allow Control** enabled, the charger control devices appear as interactive switches:
 
@@ -40,6 +42,8 @@ With **Allow Control** enabled, the charger control devices appear as interactiv
 - A myenergi hub with at least one zappi, its hub serial, and an API key (myenergi app ->
   Account -> Advanced -> API key).
 - Internet access from the Domoticz host (the myenergi local API is not supported).
+- Domoticz running Python 3.11 or newer. Debian 11 and Raspberry Pi OS bullseye ship Python 3.9;
+  stay on v1.0.5 there.
 
 ## Install (short)
 
@@ -66,6 +70,14 @@ the [Security page](https://rouzax.github.io/myenergi-domoticz-plugin/security/)
 
 Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup
 (tests, linting, type checks).
+
+## Support
+
+Building tools that solve my own problems and sharing them in the hope they solve yours too. If
+this saved you from squinting at the myenergi app to work out where your solar actually went, a
+coffee is always welcome.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O0W221GBUG)
 
 ## License and acknowledgements
 

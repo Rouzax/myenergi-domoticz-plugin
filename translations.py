@@ -48,6 +48,16 @@ _STA = {
     4: {"English": "Boosting", "Nederlands": "Boosten"},
     5: {"English": "Complete", "Nederlands": "Voltooid"},
 }
+_UPDATE = {
+    "subject": {
+        "English": "myenergi Monitor plugin {version} is available",
+        "Nederlands": "myenergi Monitor-plugin {version} is beschikbaar",
+    },
+    "body": {
+        "English": "You run {current}. What changed and how to update: {url}",
+        "Nederlands": "Je gebruikt {current}. Wat er veranderd is en hoe je bijwerkt: {url}",
+    },
+}
 _IDLE = {"English": "Idle", "Nederlands": "Inactief"}
 _PST = {
     "A": {"English": "Disconnected", "Nederlands": "Niet verbonden"},
@@ -99,3 +109,9 @@ def control_level_names(kind: str, language: str) -> str:
 def control_device_name(key: str, language: str) -> str:
     table = _CONTROL_NAMES[key]
     return table.get(language, table[_DEFAULT])
+
+
+def update_note(key: str, language: str, **values: str) -> str:
+    """Subject or body of the new-release notification."""
+    table = _UPDATE[key]
+    return table.get(language, table[_DEFAULT]).format(**values)

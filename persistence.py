@@ -26,6 +26,8 @@ class PluginState:
     - control_shown: whether the control units are currently shown by us for
       the enabled state. Gates the one-time show/hide on the AllowControl
       transition so a user's manual hide of a control device is never re-forced.
+    - update_notified: the newest plugin version already announced by the update
+      check ("" = none), so each release is announced once across restarts.
     """
 
     last_processed_date: "str | None" = None
@@ -34,12 +36,14 @@ class PluginState:
     auto_names: "dict[str, str]" = field(default_factory=dict)
     mode_text_hidden: bool = False
     control_shown: bool = False
+    update_notified: str = ""
 
 
 def migrate(raw: dict) -> dict:
     """Transform older payloads to current shape."""
     raw.setdefault("mode_text_hidden", False)
     raw.setdefault("control_shown", False)
+    raw.setdefault("update_notified", "")
     raw.setdefault("version", STATE_VERSION)
     return raw
 
@@ -55,6 +59,7 @@ def dumps(state: PluginState) -> str:
             "auto_names": state.auto_names,
             "mode_text_hidden": state.mode_text_hidden,
             "control_shown": state.control_shown,
+            "update_notified": state.update_notified,
         },
         separators=(",", ":"),
     )
@@ -72,4 +77,5 @@ def loads(text: str) -> PluginState:
         auto_names=raw.get("auto_names", {}),
         mode_text_hidden=raw.get("mode_text_hidden", False),
         control_shown=raw.get("control_shown", False),
+        update_notified=str(raw.get("update_notified") or ""),
     )
