@@ -31,6 +31,7 @@ power as real kWh counters that survive Domoticz restarts, plus **opt-in** charg
 | **Persistent counters** | Rebuilt from myenergi's per-minute history; monotonic and restart-proof. |
 | **Opt-in charger control** | Charge mode, boost (kWh + ready-by), and Eco+ min-green - off by default. |
 | **English + Nederlands** | Device names and status text in either language. |
+| **New-version notice** | A daily GitHub check announces each newer release once, in the log and through Domoticz notifications; can be turned off. |
 
 With **Allow Control** enabled, the charger control devices appear as interactive switches:
 

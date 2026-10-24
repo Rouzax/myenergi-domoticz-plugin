@@ -36,6 +36,34 @@ below.
 |---|---|---|---|
 | Max System Power (kW) | 1-100, step 1 | 25 | A safety limit for the energy counters, roughly your combined solar, grid, and charger capacity in kW. The plugin uses it as an absolute ceiling to reject a genuinely corrupt counter reading; it does not cap normal catch-up or the live power readings themselves. |
 | Debug Level | None / Basic / Verbose | None | Logging verbosity written to the Domoticz log. Use Basic or Verbose only while troubleshooting; the API key is never written to the log at any level. |
+| Update check | Automatic / Stable releases only / Including betas / Off | Automatic | Whether the plugin tells you about a newer version. See [Update check](#update-check) below. |
+
+## Update check
+
+Once a day the plugin asks GitHub whether a newer release of the plugin exists. The first check
+runs about five minutes after the plugin starts. When it finds one, it announces it **once**:
+
+- a line in the Domoticz log, for example
+  `myenergi Monitor 1.2.0 is available (running 1.1.0): https://github.com/Rouzax/myenergi-domoticz-plugin/releases/tag/v1.2.0`, and
+- one notification, "myenergi Monitor plugin 1.2.0 is available", sent through every
+  notification system enabled in Domoticz (**Setup > Settings > Notifications**: email,
+  Pushover, Telegram, browser notifications and so on). The text follows the **Language**
+  setting.
+
+The same version is never announced again, also not after a restart; the next newer version is.
+The plugin never updates itself: the notification links to the release page, which says what
+changed and how to update.
+
+| Option | What it reports |
+|---|---|
+| Automatic | Stable releases while you run a stable version, betas too while you run a beta. Right for almost everyone. |
+| Stable releases only | Only stable releases, even while you run a beta. |
+| Including betas | Stable releases and betas. |
+| Off | Nothing: the plugin makes no connection to GitHub at all. |
+
+Notifications need Domoticz 2026.1 or newer; older versions only get the log line. A check that
+fails (for example, no internet) is retried a day later and only shows up at Debug Level Basic or
+Verbose. What the check sends is described under [Security](security.md#what-the-plugin-connects-to).
 
 ## Harvi Names (optional)
 

@@ -38,6 +38,14 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **The plugin tells you when a newer version is out.** Once a day it asks GitHub for the plugin's
+  releases and announces each newer version once: a line in the Domoticz log and one notification
+  through every notification system set up in Domoticz, the browser included (notifications need
+  Domoticz 2026.1 or newer; older versions get the log line only). A new **Update check** setting
+  chooses Automatic (the default), Stable releases only, Including betas, or Off; Off makes no
+  connection to GitHub at all. The request carries nothing about your system. The plugin never
+  updates itself.
+
 - **A Ko-fi support link**, on the GitHub repository page, in the README, and in the footer of every
   documentation page. Nothing about running the plugin changes: it stays donation-free, adds no
   prompt or notice at runtime, and collects nothing.

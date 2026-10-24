@@ -44,3 +44,12 @@ def test_mode_text_hidden_roundtrips():
 def test_mode_text_hidden_defaults_false_on_old_state():
     old = loads("")  # empty -> fresh default state
     assert old.mode_text_hidden is False
+
+
+def test_update_notified_roundtrips():
+    assert loads(dumps(PluginState(update_notified="1.2.0"))).update_notified == "1.2.0"
+
+
+def test_update_notified_defaults_empty_on_old_or_null_state():
+    assert loads(json.dumps({"version": 3})).update_notified == ""
+    assert loads(json.dumps({"version": 3, "update_notified": None})).update_notified == ""

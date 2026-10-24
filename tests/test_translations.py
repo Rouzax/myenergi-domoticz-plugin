@@ -1,9 +1,12 @@
 from translations import (
+    _UPDATE,
+    LANGUAGES,
     charge_status,
     control_device_name,
     control_level_names,
     device_name,
     plug_status,
+    update_note,
     zappi_mode,
 )
 
@@ -60,3 +63,11 @@ def test_control_titles_grouped_scheme():
     assert control_device_name("min_green", "English") == "Eco+ Min Green %"
     assert control_device_name("boost_kwh", "Nederlands") == "Boost - kWh toevoegen"
     assert control_device_name("min_green", "Nederlands") == "Eco+ Min Groen %"
+
+
+def test_update_note_every_language_and_fallback():
+    for key in _UPDATE:
+        assert set(_UPDATE[key]) == set(LANGUAGES)
+    assert update_note("subject", "Klingon", version="1.2.0") == (
+        "myenergi Monitor plugin 1.2.0 is available"
+    )

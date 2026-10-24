@@ -44,8 +44,19 @@ Do this as soon as you suspect exposure; there is no way to know who else has us
   Domoticz screen.
 - The API key is never written to the Domoticz log at any **Debug Level**, including Verbose.
   Any log message that would otherwise include it has the key blanked out before it is logged.
-- The plugin makes no outbound connections other than to the myenergi cloud
-  (`director.myenergi.net` and the region-specific host it redirects to).
+- The API key is only ever sent to the myenergi cloud, never to any other host.
+
+## What the plugin connects to
+
+- **The myenergi cloud** (`director.myenergi.net` and the region-specific host it redirects to),
+  for your data and, with Allow Control on, your commands.
+- **GitHub** (`api.github.com`), once a day, for the [update check](settings.md#update-check).
+  It is a plain request for the plugin's public list of releases. It carries no API key, serial
+  number, device data or anything else about your system; GitHub sees only your public IP
+  address and the plugin version (in the request's user agent), as with any web request. Set
+  **Update check** to **Off** and the plugin never contacts GitHub.
+
+There are no other outbound connections.
 
 ## Practical advice
 

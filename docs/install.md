@@ -11,6 +11,8 @@ Before you start, make sure you have:
 - A **myenergi API key**, generated in the myenergi app under **Account > Advanced > API key**.
 - **Internet access from the Domoticz host.** The plugin talks to the myenergi cloud
   (`director.myenergi.net`); the myenergi local API is not supported and cannot be used instead.
+  Once a day it also checks GitHub (`api.github.com`) for a newer plugin version; see
+  [Update check](settings.md#update-check) to turn that off.
 - **Domoticz running Python 3.11 or newer.** Domoticz uses the Python installed on its host;
   the version is in the Domoticz log at startup, on the line
   `PluginSystem: Started, Python version '3.x.y'`. Debian 11 and Raspberry Pi OS bullseye ship

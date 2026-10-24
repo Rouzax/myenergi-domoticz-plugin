@@ -78,3 +78,24 @@ def test_api_key_whitespace_is_trimmed():
 def test_api_key_internal_chars_preserved():
     cfg = parse_config({"Username": "10000001", "ApiKey": "ab c1-2_3"})
     assert cfg.api_key == "ab c1-2_3"
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [("auto", "auto"), ("stable", "stable"), (" Beta ", "beta"), ("off", "off"), ("", "auto")],
+)
+def test_update_check_channel(value, expected):
+    assert parse_config({"UpdateCheck": value}).update_check == expected
+
+
+def test_unknown_update_check_channel_falls_back_to_auto():
+    assert parse_config({"UpdateCheck": "nightly"}).update_check == "auto"
+
+
+def test_plugin_version_from_parameters():
+    assert parse_config({"Version": " 1.1.0 "}).plugin_version == "1.1.0"
+    assert parse_config({}).plugin_version == ""
+
+
+def test_unknown_language_falls_back_to_english():
+    assert parse_config({"Language": "Klingon"}).language == "English"

@@ -27,6 +27,8 @@ went straight to the car versus the grid.
   green percentage. Off by default: the plugin is read-only until you explicitly enable it. See
   [Charger control](control.md).
 - **English and Nederlands.** Device names and status text are available in both languages.
+- **New-version notice.** A daily check tells you once, in the log and through your Domoticz
+  notifications, when a newer plugin version is out. See [Update check](settings.md#update-check).
 
 ## What you get
 

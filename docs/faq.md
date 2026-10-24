@@ -106,8 +106,9 @@ survive deleting and recreating the device.
 
 ## Can I use this without an internet connection, or with the myenergi local API?
 
-No. myenergi hardware does not expose a documented, supported local API. This plugin talks only
-to the myenergi cloud and requires outbound internet access from the Domoticz host.
+No. myenergi hardware does not expose a documented, supported local API. This plugin talks to
+the myenergi cloud and requires outbound internet access from the Domoticz host. The only other
+connection is the daily [update check](settings.md#update-check) to GitHub, which you can turn off.
 
 ## Does this plugin work with more than one hub?
 
